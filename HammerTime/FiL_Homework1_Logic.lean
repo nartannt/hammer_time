@@ -1,27 +1,22 @@
-/- # Homework 1: Logic
-Name :
+import Hammer
 
-Some of the exercises from this sheet are taken from
-  - J. Avigad et al., Logic and Proof, online
-  - J. Blanchette et al, The Hitchhiker’s Guide to Logical Verification, 2024 LMU Desktop Edition
+set_option hammer.disableAesopDefault true
+set_option hammer.preprocessingDefault "no_preprocessing"
 
-**Important:** In this sheet you are not allowed to use automation tactics like `grind` or `simp`.
-Make sure to follow the instructions given in the exercise. -/
-
-/- ## Exercise 1
-Show the following exercises about propositional logic.
-At least two of your solutions should be in term mode.
-
-The only imported theorems that you should be using are
-the introduction and elimination rules of logical operators. -/
 
 variable {A B C D : Prop}
 
-example : A ∧ (A → B) → B :=
-  sorry
+--example : A -> (A \/ B) := by
+--  set_option trace.auto.tptp.printQuery true in
+--  hammer
 
-example : A → ¬ (¬ A ∧ B) :=
-  sorry
+--example : A ∧ (A → B) → B := by
+--  set_option trace.auto.tptp.printQuery true in
+--  hammer
+
+example : A → ( A ∧ B) := by
+  set_option trace.auto.tptp.printQuery true in
+  hammer
 
 example : ¬ (A ∧ B) → (A → ¬ B) :=
   sorry
