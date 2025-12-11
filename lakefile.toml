@@ -4,7 +4,7 @@ keywords = ["math"]
 defaultTargets = ["HammerTime"]
 
 [leanOptions]
-pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+pp.unicode.fun = true                 # pretty-prints `fun a ↦ b`
 relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
@@ -12,12 +12,12 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "Hammer"
 git = "https://github.com/JOSHCLUNE/LeanHammer"
-rev = "v4.25.0"
+rev = "v4.25.2"
 
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.25.1"
+rev = "v4.25.2"
 
 
 [[lean_lib]]
