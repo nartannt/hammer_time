@@ -7,13 +7,26 @@ Have 4 files, 2 lean and 2 isabelle, the first two files will be parallel formal
 
     - copy isabelle files from relevant concrete semantics snippet
 
+# DOING
+    
+    - translating isabelle files into lean
+
 # TODO
+
+## Fix
+    
+    - fix equivalence proof, in particular how to get to P = True from P
+
+## Check
+
+    - if using a schematic variable notation similar to Isabelle is possible
+    - if it's reasonable to have a list like notation for sequences of state modifications s[x↦1, y↦2] instead of s[x↦1][y↦2]
+    - is there a way to remove the quotPrecheck deactivation
 
 ## Unautomated parallel files
 
-    - get isabelle to build (waiting on vampire patch in nix packages)
+    - get isabelle to build (waiting on isabelle vampire patch in nix packages)
     - check that the copied isabelle files compile
-    - finish translating isabelle files into lean
     - remove automation from isabelle and lean files
 
 ## Automated parallel files
