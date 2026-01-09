@@ -104,7 +104,7 @@ theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s'
   }
 
 set_option quotPrecheck false
-notation (name := sem_equivalence) p "~" p' => forall s t, ((p, s) ==> t) = ((p', s) ==> t)
+notation (name := sem_equivalence) p "~" p' => forall s t, ((p, s) ==> t) <-> ((p', s) ==> t)
 
 theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE b DO c ELSE Com.skip)) := by
   intros s t
@@ -148,12 +148,63 @@ theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE
         rw [h]
         apply BigStep.while_false; rw [h] at hc; assumption
       }
-  by_cases f: ((p, s)==>t) <;>
-  by_cases f': ((p', s) ==>t )
+
   rw [<-hp']
   rw [<-hp]
-  have h: (((p, s) ==> t) = True) := by 
+  constructor <;> assumption
+
+
+theorem triv_if (c: Com) (b: BExp): ((IF b THEN c ELSE c) ~ c) := by
+  intros s t
+  constructor
+  intro h
+  cases h <;> assumption 
+  intro h
+  cases hc: (beval b s)
+  have h': (¬beval b s = true) := by
+    rw [hc]
+    simp
+  apply BigStep.if_false <;> assumption
+  apply BigStep.if_true <;> assumption
+
+
+theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2) 
+   ~ 
+   (IF b2 THEN (IF b1 THEN c11 ELSE c2) ELSE (IF b1 THEN c12 ELSE c2)) := by
+  intros s t
+  constructor
+  intro h
+  cases h with
+    | if_true  _ _ _ _ _ _ hb => {
+      cases hb <;> first | (apply BigStep.if_true; repeat assumption); (first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial) | (apply BigStep.if_false; repeat assumption); (try first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial)
+    }
+    | if_false _ _ _ _ _ _ hb => {
+      by_cases (beval b2 s = true)
+      <;>
+        first | (apply BigStep.if_true; repeat assumption); (first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial) | (apply BigStep.if_false; repeat assumption); (try first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial)
+    }
+
+  intro h
+  cases h with
+    | if_true  _ _ _ _ _ _ hb => {
+      cases hb <;> first | (apply BigStep.if_true; repeat assumption); (first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial) | (apply BigStep.if_false; repeat assumption); (try first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial)
+    }
+    | if_false _ _ _ _ _ _ hb => {
+      cases hb <;> first | (apply BigStep.if_true; repeat assumption); (first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial) | (apply BigStep.if_false; repeat assumption); (try first | ((apply BigStep.if_true); repeat assumption); all_goals trivial | ((apply BigStep.if_false); repeat assumption); all_goals trivial)
+    }
+
+
+theorem sim_while_cong_aux:
+  ((WHILE b DO c,s) ==> t)  -> (c ~ c') ->  ((WHILE b DO c',s) ==> t) := by
+    intros h
+
     sorry
-  repeat sorry
 
 
+
+theorem sim_while_cong: (c ~ c') -> (WHILE b DO c) ~ (WHILE b DO c') := by
+  sorry
+
+theorem sim_refl:  ( c ~ c ) := by sorry
+theorem sim_sym:   ((c ~ c') <-> (c' ~ c)) := by sorry
+theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by sorry

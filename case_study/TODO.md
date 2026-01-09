@@ -15,7 +15,7 @@ Have 4 files, 2 lean and 2 isabelle, the first two files will be parallel formal
 
 ## Fix
     
-    - fix equivalence proof, in particular how to get to P = True from P
+    - check with Xavier if it can be possible to have equality in the program equivalence definition
 
 ## Check
 
@@ -27,7 +27,7 @@ Have 4 files, 2 lean and 2 isabelle, the first two files will be parallel formal
 
     - get isabelle to build (waiting on isabelle vampire patch in nix packages)
     - check that the copied isabelle files compile
-    - remove automation from isabelle and lean files
+    - clean up lean file (make proofs nice)
 
 ## Automated parallel files
 
