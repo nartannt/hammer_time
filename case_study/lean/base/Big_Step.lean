@@ -197,14 +197,58 @@ theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2)
 theorem sim_while_cong_aux:
   ((WHILE b DO c,s) ==> t)  -> (c ~ c') ->  ((WHILE b DO c',s) ==> t) := by
     intros h
-
-    sorry
+    generalize rn : (WHILE b DO c, s) = p
+    rw [rn] at h
+    induction h generalizing s with
+      | skip => cases rn
+      | assign => cases rn
+      | seq => cases rn
+      | if_true => cases rn
+      | if_false => cases rn
+      | while_false cond d s' hcond=> {
+        cases rn
+        intro peq
+        apply BigStep.while_false
+        assumption
+      }
+      | while_true cond d s' t' u hcond hb hr ih_c ih_r=> {
+        cases rn
+        intros peq
+        have triv : (WHILE b DO c, t') = (WHILE b DO c, t') := by eq_refl
+        specialize ih_r triv  
+        apply BigStep.while_true
+        assumption
+        rw [<-peq]
+        assumption
+        apply ih_r
+        assumption
+      }
 
 
 
 theorem sim_while_cong: (c ~ c') -> (WHILE b DO c) ~ (WHILE b DO c') := by
-  sorry
+  intros eq s t
+  constructor
+  repeat (intro; apply sim_while_cong_aux; repeat assumption)
+  intros s t
+  symm
+  specialize eq s t
+  assumption
 
-theorem sim_refl:  ( c ~ c ) := by sorry
-theorem sim_sym:   ((c ~ c') <-> (c' ~ c)) := by sorry
-theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by sorry
+
+
+
+
+theorem sim_refl:  ( c ~ c ) := by
+  intros
+  trivial
+
+theorem sim_sym:   ((c ~ c') <-> (c' ~ c)) := by 
+  constructor
+  repeat (intros h s t; symm; specialize h s t; assumption)
+
+theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by 
+  intros h1 h2 s t
+  rw [h1]
+  specialize h2 s t
+  assumption
