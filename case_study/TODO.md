@@ -13,9 +13,12 @@ Have 4 files, 2 lean and 2 isabelle, the first two files will be parallel formal
 
 # TODO
 
+    - change lean files into proper project 
+
 ## Fix
     
-    - check with Xavier if it can be possible to have equality in the program equivalence definition
+    - check with Xavier if it can be possible to have equality in the program equivalence definition instead of a definition
+    - import modules / libraries correctly in lean project
 
 ## Check
 
@@ -27,7 +30,7 @@ Have 4 files, 2 lean and 2 isabelle, the first two files will be parallel formal
 
     - get isabelle to build (waiting on isabelle vampire patch in nix packages)
     - check that the copied isabelle files compile
-    - clean up lean file (make proofs nice)
+    - clean up lean proofs
 
 ## Automated parallel files
 
