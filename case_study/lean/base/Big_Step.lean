@@ -235,10 +235,6 @@ theorem sim_while_cong: (c ~ c') -> (WHILE b DO c) ~ (WHILE b DO c') := by
   specialize eq s t
   assumption
 
-
-
-
-
 theorem sim_refl:  ( c ~ c ) := by
   intros
   trivial
@@ -252,3 +248,59 @@ theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by
   rw [h1]
   specialize h2 s t
   assumption
+
+theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
+  intro h
+  rcases h with ⟨h_0, h_1⟩
+  induction c generalizing s t u with
+    | skip => 
+      cases h_0; cases h_1; eq_refl
+    | assign name val =>
+      cases h_0; cases h_1; eq_refl
+    | seq left right h_l h_r => 
+      cases h_0 with | seq _ _ _ s'  _ hL hR
+      cases h_1 with | seq _ _ _ s'' _ hL' hR'
+      have h_mid :(s'' = s') := by
+        apply h_l; all_goals assumption
+      apply h_r; all_goals try assumption
+      rw [<-h_mid]
+      assumption
+    | ite cond ifp elsep ih ih' =>
+      cases h_0 with
+        | if_true _ _ _ _ _ hcond hbody =>
+          cases h_1 with
+            | if_true _ _ _ _ _ hcond' hbody' =>
+              apply ih; all_goals assumption
+            | if_false _ _ _ _ _ hcond' hbody' =>
+              exfalso; apply hcond'; assumption
+        | if_false _ _ _ _ _ hcond hbody =>
+          cases h_1 with
+            | if_true _ _ _ _ _ hcond' hbody' =>
+              exfalso; apply hcond; assumption
+            | if_false _ _ _ _ _ hcond' hbody' =>
+              apply ih'; all_goals assumption
+    | while s cond loop ih  => 
+      sorry
+        
+        --apply ih
+        --{
+        --  cases hc: (beval cond s)
+        --  cases h_0 with 
+        --    | while_true _ _ _ _ _ hc' => 
+        --      rw [hc] at hc'
+        --      contradiction
+        --    | while_false A B C D => 
+        --      cases h_1 with
+        --      | while_true _ _ _ _ _ hc' => 
+        --        rw [hc] at hc'
+        --        contradiction
+        --      | while_false A' B' C' D' => 
+        --        sorry
+        --        
+
+        --  sorry
+
+        --} 
+        --{sorry}
+        --{assumption}
+
