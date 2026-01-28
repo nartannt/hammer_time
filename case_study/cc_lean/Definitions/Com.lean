@@ -44,6 +44,7 @@ notation (name := seq_semicolon) s_1 ";;" s_2 => Com.seq s_1 s_2
 notation (name := assign_eq) var_name "::=" expr => Com.assign var_name expr
 notation (name := ite_term) "IF" cond "THEN" expr_1 "ELSE" expr_2 => Com.ite cond expr_1 expr_2
 notation (name := while_term) "WHILE" cond "DO" expr => Com.while cond expr
+notation (name := skip_term) "SKIP" => Com.skip
 
 inductive BigStep : Com × State -> State -> Prop where
   | skip (s) : BigStep (Com.skip, s) s
@@ -64,3 +65,48 @@ notation (name := big_step_judgement) prog_init_state_pair "==>" final_state => 
 
 set_option quotPrecheck false
 notation (name := sem_equivalence) p "~" p' => forall s t, ((p, s) ==> t) <-> ((p', s) ==> t)
+
+inductive SmallStep : Com × State -> Com × State -> Prop where 
+  | var_assign (x a s) : SmallStep (x ::= a, s) (SKIP, s[x ↦ (aeval a s)])
+  | seq_1 (c_2 s) : SmallStep (SKIP ;; c_2, s) (c_2, s)
+  | seq_2 (c_1 c_1' c_2 s s') : SmallStep (c_1 , s) (c_1', s') -> SmallStep (c_1 ;; c_2, s) (c_1' ;; c_2, s')
+  | if_true (b c_1 c_2 s) : beval b s -> SmallStep (IF b THEN c_1 ELSE c_2, s) (c_1, s)
+  | if_false (b c_1 c_2 s) : ¬ (beval b s) -> SmallStep (IF b THEN c_1 ELSE c_2, s) (c_2, s)
+  | while_loop (b c s) : SmallStep (WHILE b DO c, s) (IF b THEN c ;; WHILE b DO c ELSE SKIP, s)
+
+
+inductive RTC {α : Type} (R : α → α → Prop) (a : α) : α → Prop
+  | refl : RTC R a a
+  | tail (b c) (hab : RTC R a b) (hbc : R b c) : RTC R a c
+
+
+theorem RTC_single {α : Type} {R : α → α → Prop} {a b : α} (hab : R a b) :
+    RTC R a b :=
+  RTC.tail _ _ RTC.refl hab
+
+theorem RTC_lift {α β : Type} {R : α → α → Prop} {S : β → β → Prop} {a b : α}
+      (f : α → β) (hf : ∀a b, R a b → S (f a) (f b)) (hab : RTC R a b) :
+    RTC S (f a) (f b) :=
+  by
+    induction hab with
+    | refl => apply RTC.refl
+    | tail b c hab hbc ih =>
+      apply RTC.tail
+      apply ih
+      apply hf
+      exact hbc
+
+theorem RTC_trans {α : Type} {R : α → α → Prop} {a b c : α} (hab : RTC R a b)
+      (hbc : RTC R b c) :
+    RTC R a c :=
+  by
+    induction hbc with
+    | refl =>
+      assumption
+    | tail c d hbc hcd hac =>
+      apply RTC.tail <;>
+        assumption
+
+--notation (name := small_step_judgement) init_config "->*" final_config => SmallStep init_config final_config
+infixr:100 "->>" => SmallStep
+infixr:100 "->*" => RTC SmallStep
