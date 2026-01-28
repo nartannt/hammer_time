@@ -1,0 +1,16 @@
+name = "cc_lean"
+version = "0.1.0"
+defaultTargets = ["cc_lean"]
+
+[[lean_lib]]
+name = "CcLean"
+
+[[lean_lib]]
+name = "Definitions"
+
+[[lean_lib]]
+name = "Base"
+
+[[lean_exe]]
+name = "cc_lean"
+root = "Main"
