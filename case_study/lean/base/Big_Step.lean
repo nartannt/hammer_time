@@ -136,6 +136,16 @@ theorem triv_if (c: Com) (b: BExp): ((IF b THEN c ELSE c) ~ c) := by
     apply BigStep.if_true <;> assumption
   }
 
+syntax "ass_triv" : tactic
+macro_rules | `(tactic | ass_triv) => `(tactic | (assumption; try trivial))
+
+syntax "if_tf" : tactic
+macro_rules | `(tactic | if_tf) => `(tactic |  (first | apply BigStep.if_true; ass_triv | apply BigStep.if_false; ass_triv))
+
+syntax "ite_commute" : tactic
+macro_rules 
+  | `(tactic| ite_commute )  => `(tactic | 
+        first | (apply BigStep.if_true; ass_triv); if_tf | (apply BigStep.if_false; ass_triv); (try if_tf))
 
 theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2) 
    ~ 
@@ -145,23 +155,19 @@ theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2)
   intro h
   cases h with
     | if_true  _ _ _ _ _ _ hb => {
-      cases hb <;> 
-      first | (apply BigStep.if_true; assumption); (first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial) | (apply BigStep.if_false; repeat assumption); (try first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial)
+      cases hb <;> ite_commute
     }
-    | if_false _ _ _ _ _ _ hb => {
-      by_cases (beval b2 s = true) <;>
-      first | (apply BigStep.if_true; assumption); (first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial) | (apply BigStep.if_false; repeat assumption); (try first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial)
+    | if_false => {
+      by_cases (beval b2 s = true) <;> ite_commute
     }
 
   intro h
   cases h with
     | if_true  _ _ _ _ _ _ hb => {
-      cases hb <;> 
-      first | (apply BigStep.if_true; assumption); (first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial) | (apply BigStep.if_false; repeat assumption); (try first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial)
+      cases hb <;> ite_commute
     }
     | if_false _ _ _ _ _ _ hb => {
-      cases hb <;>
-      first | (apply BigStep.if_true; assumption); (first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial) | (apply BigStep.if_false; repeat assumption); (try first | apply BigStep.if_true; assumption; trivial | apply BigStep.if_false; assumption; trivial)
+      cases hb <;> ite_commute
     }
 
 
