@@ -62,6 +62,9 @@ inductive BigStep : Com × State -> State -> Prop where
 
 notation (name := big_step_judgement) prog_init_state_pair "==>" final_state => BigStep prog_init_state_pair final_state
 
+set_option quotPrecheck false
+notation (name := sem_equivalence) p "~" p' => forall s t, ((p, s) ==> t) <-> ((p', s) ==> t)
+
 example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by
   apply BigStep.seq <;> apply BigStep.assign
 
@@ -96,9 +99,6 @@ theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s'
     cases h2 
     repeat apply BigStep.seq <;> try assumption
   }
-
-set_option quotPrecheck false
-notation (name := sem_equivalence) p "~" p' => forall s t, ((p, s) ==> t) <-> ((p', s) ==> t)
 
 theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE b DO c ELSE Com.skip)) := by
   intros s t

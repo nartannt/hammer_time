@@ -10,6 +10,8 @@ Have 4 files, 2 lean and 2 isabelle, the first two files will be parallel formal
 # DOING
     
     - translating isabelle files into lean
+        x BigStep
+        - SmallStep
 
 # TODO
 
@@ -17,13 +19,11 @@ Have 4 files, 2 lean and 2 isabelle, the first two files will be parallel formal
 
 ## Fix
     
-    - check with Xavier if it can be possible to have equality in the program equivalence definition instead of a definition
     - import modules / libraries correctly in lean project
 
 ## Check
 
     - if using a schematic variable notation similar to Isabelle is possible
-    - if it's reasonable to have a list like notation for sequences of state modifications s[x↦1, y↦2] instead of s[x↦1][y↦2]
     - is there a way to remove the quotPrecheck deactivation
 
 ## Unautomated parallel files
