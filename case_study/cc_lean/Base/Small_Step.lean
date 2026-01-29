@@ -109,4 +109,45 @@ theorem big_imp_small : (cs ==> t) -> (cs ->* (SKIP, t)) := by
       apply RTC.refl
     }
 
+theorem step_sem_imp : (cs ->> cs') -> (cs' ==> t) -> (cs ==> t) := by
+  intros h h'
+  induction h generalizing t with
+    | var_assign =>
+      cases h'
+      apply BigStep.assign
+    | seq_1 =>
+      apply BigStep.seq
+      apply BigStep.skip
+      assumption
+    | seq_2 c1 c1' c2 s s' h'' ih =>
+      cases h' with
+        | seq _ _ _ t' _ hl hr =>
+          apply BigStep.seq
+          apply ih <;>
+          assumption
+          assumption
+    | if_true =>
+      apply BigStep.if_true <;>
+      assumption
+    | if_false => 
+      apply BigStep.if_false <;>
+      assumption
+    | while_loop =>
+      rw [unfold_while]
+      assumption
 
+theorem small_imp_big : (cs ->* (SKIP, t)) -> (cs ==> t) := by
+  intro h
+  generalize rn : (SKIP, t) = p
+  rw [rn] at h
+  induction h generalizing t with
+    | refl =>
+      cases rn
+      apply BigStep.skip
+    | tail cs' cs'' ht hh ih =>
+      cases rn
+      apply step_sem_imp
+
+
+
+  
