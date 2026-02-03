@@ -40,15 +40,22 @@ theorem small_seq_congr : ((c_1, s_1) ->* (c, s_2)) -> (c_1;;c_2, s_1) ->* (c;;c
   generalize rn : (c_1, s_1) = p1
   generalize rn' : (c, s_2) = p2
   rw [rn, rn'] at h
-  induction h generalizing c c_1 s_1 s_2 with
+  induction h generalizing c c_1 s_1 c_2 s_2 with
     | refl => cases rn; cases rn'; apply RTC.refl
-    | tail cs cs' ht hh ih =>
+    | step cs cs' ht hh ih =>
       cases rn; cases rn'
-      rcases cs with ⟨c1', s1'⟩ 
-      apply (RTC.tail (c1';;c_2, s1'))
-      apply ih <;> try rfl
-      apply SmallStep.seq_2
-      assumption
+      rcases cs with ⟨c_1', s_1'⟩ 
+      have h: (RTC SmallStep (c_1';;c_2, s_1') (c;;c_2, s_2)) := by
+        apply ih <;> rfl
+
+      have h': (RTC SmallStep (c_1;;c_2, s_1) (c_1';;c_2, s_1')) := by
+        apply RTC.step
+        apply SmallStep.seq_2
+        assumption
+        apply RTC.refl
+
+      apply RTC_trans <;> assumption      
+
 
 theorem big_imp_small : (cs ==> t) -> (cs ->* (SKIP, t)) := by
   intro h
@@ -80,9 +87,9 @@ theorem big_imp_small : (cs ==> t) -> (cs ->* (SKIP, t)) := by
         assumption
       apply RTC_trans <;> assumption
     | while_false cond d s' hcond => {
-      apply (RTC.tail (IF cond THEN d;;WHILE cond DO d ELSE SKIP, s'))
-      apply RTC_single
+      apply (RTC.step (IF cond THEN d;;WHILE cond DO d ELSE SKIP, s'))
       apply SmallStep.while_loop
+      apply RTC_single
       apply SmallStep.if_false
       assumption
     }
@@ -144,10 +151,97 @@ theorem small_imp_big : (cs ->* (SKIP, t)) -> (cs ==> t) := by
     | refl =>
       cases rn
       apply BigStep.skip
-    | tail cs' cs'' ht hh ih =>
+    | step cs' cs'' hh ht ih =>
+      rcases cs' with ⟨c_1', s_1'⟩ 
       cases rn
-      apply step_sem_imp
+      simp at ih
+      apply step_sem_imp <;>
+      assumption
 
 
+theorem small_big_eq : ((c, s) ==> t) <-> ((c, s) ->* (SKIP, t) ) := by
+  constructor
+  intro; apply big_imp_small; assumption
+  intro; apply small_imp_big; assumption
 
-  
+def final : Com × State -> Prop  
+  | cs => ¬ (exists cs', cs ->> cs')
+
+theorem small_final : final (c, s) <-> (c = SKIP) := by
+  constructor
+  {
+    intro h
+    induction c with
+      | skip =>
+        rfl
+      | assign var val =>
+        exfalso
+        apply h
+        exists (SKIP, s[var ↦ (aeval val s)])
+        apply SmallStep.var_assign
+      | seq c c' ih ih' =>
+        exfalso
+        apply h
+        by_cases h'': (final (c, s))
+        have hc : (c = SKIP) := by
+          apply ih; assumption
+        cases hc
+        exists (c', s)
+        apply SmallStep.seq_1
+        simp [final] at h''
+        cases h'' with | intro d h''
+        cases h'' with | intro t h''
+        exists (d;;c', t)
+        apply SmallStep.seq_2
+        assumption
+      | ite cond ci ce ih ih' =>
+        exfalso
+        apply h
+        by_cases hcond:(beval cond s = true)
+        exists (ci, s)
+        apply SmallStep.if_true
+        assumption
+        exists (ce, s)
+        apply SmallStep.if_false
+        assumption
+      | «while» cond loop ih=>
+        exfalso
+        apply h
+        exists (IF cond THEN loop ;; WHILE cond DO loop ELSE SKIP, s)
+        apply SmallStep.while_loop
+  }
+  {
+    intro h; cases h
+    unfold final
+    intros cs h'
+    cases h' with | intro cs' h'
+    simp [cs] at h'
+    cases h'
+  }
+
+theorem big_step_small_step_termination : (exists t, cs ==> t) <-> (exists cs', cs ->* cs' ∧ final cs') := by
+  constructor
+  {
+    intro h
+    cases h with | intro t h
+    exists (SKIP, t)
+    constructor
+    rw [<- small_big_eq]
+    assumption
+    rw [small_final]
+  }
+  {
+    intro h
+    cases h with | intro cs' h
+    rcases h with ⟨h, h'⟩ 
+    rcases cs with ⟨c, s⟩ 
+    rcases cs' with ⟨c', t⟩ 
+    exists t
+    rw [small_big_eq]
+    have hc' : (c' = SKIP) := by
+      rw [<- small_final]
+      assumption
+    rw [<- hc']
+    assumption
+  }
+
