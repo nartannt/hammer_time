@@ -1,6 +1,8 @@
 import Definitions.Com
+import Hammer
 
 example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by
+  try hammer [BigStep.seq, BigStep.assign]
   apply BigStep.seq <;> apply BigStep.assign
 
 theorem ite_skip (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
@@ -13,12 +15,12 @@ theorem ite_skip (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Co
 theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
   constructor
   {
-    intro h; cases h; rfl
+    intro h
+    cases h
+    hammer
   }
   {
-    intro h
-    rw [h]
-    apply BigStep.assign
+    hammer
   }
 
 theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s') := by
@@ -28,7 +30,7 @@ theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s'
   | seq _ _ _ _ _ h1 h2
   {
     cases h1 
-    repeat apply BigStep.seq <;> try assumption
+    hammer [BigStep.seq]
   }
   {
     cases h2 
@@ -42,10 +44,9 @@ theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE
     intro h
     cases h with
     | while_true =>
-      apply BigStep.if_true; assumption
-      apply BigStep.seq <;> assumption
+      hammer [BigStep.if_true, BigStep.seq]
     | while_false =>
-      apply BigStep.if_false; assumption; apply BigStep.skip
+      hammer [BigStep.if_false, BigStep.skip]
   }
   {
     intro h'
@@ -63,13 +64,8 @@ theorem triv_if (c: Com) (b: BExp): ((IF b THEN c ELSE c) ~ c) := by
   intro h; cases h <;> assumption 
   intro h
   cases hc: (beval b s)
-  {
-    apply BigStep.if_false
-    simp; all_goals assumption
-  }
-  {
-    apply BigStep.if_true <;> assumption
-  }
+  hammer [BigStep.if_true, BigStep.if_false]
+  hammer [BigStep.if_true, BigStep.if_false]
 
 syntax "ass_trivial" : tactic
 macro_rules | `(tactic | ass_trivial) => `(tactic | (assumption; try trivial))
@@ -118,46 +114,28 @@ theorem sim_while_cong_aux:
       | if_true => cases rn
       | if_false => cases rn
       | while_false cond d s' hcond=> {
-        cases rn
-        intro peq
-        apply BigStep.while_false
-        assumption
+        try hammer
+        hammer [BigStep.while_false]
       }
       | while_true cond d s' t' u hcond hb hr ih_c ih_r=> {
         cases rn
-        intros peq
-        apply BigStep.while_true
-        assumption
-        rw [<-peq]
-        assumption
-        apply ih_r;
-        rfl; assumption
+        try hammer
+        hammer [BigStep.while_true]
       }
 
 
 
 theorem sim_while_cong: (c ~ c') -> (WHILE b DO c) ~ (WHILE b DO c') := by
-  intros eq s t
-  constructor
-  repeat (intro; apply sim_while_cong_aux; repeat assumption)
-  intros s t
-  specialize eq s t
-  symm
-  assumption
+  hammer
 
 theorem sim_refl:  ( c ~ c ) := by
-  intros
-  trivial
+  hammer
 
 theorem sim_sym:   ((c ~ c') <-> (c' ~ c)) := by 
-  constructor
-  repeat (intros h s t; symm; specialize h s t; assumption)
+  hammer
 
 theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by 
-  intros h1 h2 s t
-  rw [h1]
-  specialize h2 s t
-  assumption
+  hammer
 
 theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
   intro h
@@ -172,29 +150,21 @@ theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
       cases h_1 with | seq _ _ _ v _ _ ht'
       have h_mid : (v = t') := by
         apply ih; assumption; rfl
-      rw [h_mid] at ht'
-      apply ih'
-      assumption; rfl
+      hammer
     | if_true _ _ _ _ _ _ _ ih =>
       cases rn
       cases h_1 with
-        | if_true => apply ih; assumption; rfl
+        | if_true => hammer
         | if_false => trivial
     | if_false cond ci ce s' t' hcond hobdy ih =>
       cases rn
       cases h_1 with
         | if_true => trivial
-        | if_false => apply ih; assumption; rfl
+        | if_false => hammer
     | while_true _ _ _ t' _ _ _ _ ih ih' => 
       cases rn
       cases h_1 with
-        | while_true _ _ _ v _ _ hbody _ =>
-          have h_mid : (v = t') := by
-            apply ih; assumption; rfl
-          rw [h_mid] at hbody
-          apply ih'
-          assumption
-          rw [<- h_mid]
+        | while_true _ _ _ v _ _ hbody _ => hammer
         | while_false => trivial
     | while_false =>
       cases rn; cases h_1 <;> trivial

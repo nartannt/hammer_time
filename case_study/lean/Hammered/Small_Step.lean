@@ -1,10 +1,11 @@
 import Definitions.Com
 import Hammered.Big_Step
+import Hammer
 
 theorem small_step_deterministic : (cs ->> cs') -> (cs ->> cs'') -> (cs'' = cs') := by
   intros h1 h2
   induction h1 generalizing cs'' with
-    | var_assign x a s=> 
+    | var_assign x a s => 
       cases h2
       rfl
     | seq_1 c2 s => 
@@ -54,7 +55,7 @@ theorem small_seq_congr : ((c_1, s_1) ->* (c, s_2)) -> (c_1;;c_2, s_1) ->* (c;;c
         assumption
         apply RTC.refl
 
-      apply RTC_trans <;> assumption      
+      hammer
 
 
 theorem big_imp_small : (cs ==> t) -> (cs ->* (SKIP, t)) := by
@@ -63,41 +64,36 @@ theorem big_imp_small : (cs ==> t) -> (cs ->* (SKIP, t)) := by
     | skip s =>
       apply RTC.refl
     | assign =>
-      apply RTC_single
-      apply SmallStep.var_assign
+      try hammer
+      try hammer [RTC_single]
+      try hammer [SmallStep.var_assign]
+      --hammer [RTC_single, SmallStep.var_assign]
     | seq c1 c2 s t u h1 h2 ih ih' =>
+      try hammer
+      try hammer [small_seq_congr, RTC_single, SmallStep.seq_1, RTC_trans, RTC.refl]
       have h_mid_1 : ((c1;;c2, s) ->* (SKIP;;c2, t)) := by
-        apply small_seq_congr
-        assumption
+        hammer
       have h_mid_2 : ((SKIP;;c2, t) ->* (c2, t)) := by
-        apply RTC_single
-        apply SmallStep.seq_1
+        try hammer
+        hammer [SmallStep.seq_1]
+      try hammer [RTC_trans]
       repeat (apply RTC_trans; assumption)
       apply RTC.refl
     | if_true b c c' s t hcond hb ih =>
       have h: (RTC SmallStep (IF b THEN c ELSE c', s) (c, s)) := by
-        apply RTC_single
-        apply SmallStep.if_true
-        assumption
-      apply RTC_trans <;> assumption
+        hammer [SmallStep.if_true]
+      hammer
     | if_false b c c' s t hcond hb ih =>
       have h: (RTC SmallStep (IF b THEN c ELSE c', s) (c', s)) := by
-        apply RTC_single
-        apply SmallStep.if_false
-        assumption
-      apply RTC_trans <;> assumption
+        hammer [SmallStep.if_false]
+      hammer
     | while_false cond d s' hcond => {
-      apply (RTC.step (IF cond THEN d;;WHILE cond DO d ELSE SKIP, s'))
-      apply SmallStep.while_loop
-      apply RTC_single
-      apply SmallStep.if_false
-      assumption
+      hammer [RTC.step, SmallStep.while_loop, RTC_single, SmallStep.if_false]
     }
     | while_true cond d s' t' u hcond hb hr ih_c ih_r => {
       have h1: (RTC SmallStep (WHILE cond DO d, s') (d;;WHILE cond DO d, s')) := by
         have h2: (RTC SmallStep (WHILE cond DO d, s') (IF cond THEN d;;WHILE cond DO d ELSE SKIP, s')) := by
-          apply RTC_single
-          apply SmallStep.while_loop
+          hammer [SmallStep.while_loop, SmallStep.if_true]
         apply RTC_trans
         assumption
         apply RTC_single
@@ -105,12 +101,10 @@ theorem big_imp_small : (cs ==> t) -> (cs ->* (SKIP, t)) := by
         assumption
 
       have h3: (RTC SmallStep (d;;WHILE cond DO d, s') (SKIP;;WHILE cond DO d, t') ) := by
-        apply small_seq_congr
-        assumption
+        hammer
 
       have h4: (RTC SmallStep (SKIP;;WHILE cond DO d, t') (WHILE cond DO d, t') ) := by
-        apply RTC_single
-        apply SmallStep.seq_1
+        hammer [SmallStep.seq_1]
 
       repeat (apply RTC_trans; assumption)
       apply RTC.refl
@@ -118,6 +112,7 @@ theorem big_imp_small : (cs ==> t) -> (cs ->* (SKIP, t)) := by
 
 theorem step_sem_imp : (cs ->> cs') -> (cs' ==> t) -> (cs ==> t) := by
   intros h h'
+  try induction h generalizing t <;> hammer [BigStep.assign, BigStep.skip, BigStep.seq, BigStep.if_true, BigStep.if_false, BigStep.while_true, BigStep.while_false, unfold_while]
   induction h generalizing t with
     | var_assign =>
       cases h'
@@ -130,7 +125,7 @@ theorem step_sem_imp : (cs ->> cs') -> (cs' ==> t) -> (cs ==> t) := by
       cases h' with
         | seq _ _ _ t' _ hl hr =>
           apply BigStep.seq
-          apply ih <;>
+          apply ih
           assumption
           assumption
     | if_true =>
@@ -160,9 +155,7 @@ theorem small_imp_big : (cs ->* (SKIP, t)) -> (cs ==> t) := by
 
 
 theorem small_big_eq : ((c, s) ==> t) <-> ((c, s) ->* (SKIP, t) ) := by
-  constructor
-  intro; apply big_imp_small; assumption
-  intro; apply small_imp_big; assumption
+  hammer
 
 theorem small_final : final (c, s) <-> (c = SKIP) := by
   constructor
@@ -188,10 +181,12 @@ theorem small_final : final (c, s) <-> (c = SKIP) := by
         simp [final] at h''
         cases h'' with | intro d h''
         cases h'' with | intro t h''
+        try hammer [SmallStep.seq_1, SmallStep.seq_2]
         exists (d;;c', t)
         apply SmallStep.seq_2
         assumption
       | ite cond ci ce ih ih' =>
+        try hammer [SmallStep.if_true, SmallStep.if_false]
         exfalso
         apply h
         by_cases hcond:(beval cond s = true)
@@ -219,6 +214,8 @@ theorem small_final : final (c, s) <-> (c = SKIP) := by
 theorem big_step_small_step_termination : (exists t, cs ==> t) <-> (exists cs', cs ->* cs' ∧ final cs') := by
   constructor
   {
+    --try hammer
+    --try hammer [small_big_eq, small_final]
     intro h
     cases h with | intro t h
     exists (SKIP, t)
