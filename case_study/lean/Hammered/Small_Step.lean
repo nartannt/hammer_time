@@ -1,5 +1,5 @@
 import Definitions.Com
-import Base.Big_Step
+import Hammered.Big_Step
 
 theorem small_step_deterministic : (cs ->> cs') -> (cs ->> cs'') -> (cs'' = cs') := by
   intros h1 h2
@@ -163,9 +163,6 @@ theorem small_big_eq : ((c, s) ==> t) <-> ((c, s) ->* (SKIP, t) ) := by
   constructor
   intro; apply big_imp_small; assumption
   intro; apply small_imp_big; assumption
-
-def final : Com × State -> Prop  
-  | cs => ¬ (exists cs', cs ->> cs')
 
 theorem small_final : final (c, s) <-> (c = SKIP) := by
   constructor

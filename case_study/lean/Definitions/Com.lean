@@ -97,3 +97,7 @@ theorem RTC_trans {α : Type} {R : α → α → Prop} {a b c : α} (hab : RTC R
 --notation (name := small_step_judgement) init_config "->*" final_config => SmallStep init_config final_config
 infixr:100 "->>" => SmallStep
 infixr:100 "->*" => RTC SmallStep
+
+def final : Com × State -> Prop  
+  | cs => ¬ (exists cs', cs ->> cs')
+
