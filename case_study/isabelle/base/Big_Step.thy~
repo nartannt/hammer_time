@@ -186,7 +186,13 @@ proof -
       thus ?thesis by blast
     next
       case WhileTrue
-      thus ?thesis by blast
+      from ‹bval b s› ‹(?w, s) ⇒ t› obtain s' where
+        "(c, s) ⇒ s'" and "(?w, s') ⇒ t" by auto
+      ― ‹now we can build a derivation tree for the \<^text>‹IF››
+      ― ‹first, the body of the True-branch:›
+      hence "(c;; ?w, s) ⇒ t" by (rule Seq)
+      ― ‹then the whole \<^text>‹IF››
+      with ‹bval b s› show ?thesis by (rule IfTrue)
     qed
   qed
   moreover
