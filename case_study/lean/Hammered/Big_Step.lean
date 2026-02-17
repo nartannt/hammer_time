@@ -5,12 +5,23 @@ example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> 
   try hammer [BigStep.seq, BigStep.assign]
   apply BigStep.seq <;> apply BigStep.assign
 
-theorem ite_skip (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
-  intro bs
-  cases bs with
-    | if_true  _ _ _ _ _ _ hb => cases hb; rfl
-    | if_false _ _ _ _ _ _ hb => cases hb; rfl
+example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
+  hammer
+  sorry
 
+theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
+  intro h
+  cases h with
+  | if_true _ _ _ _ _ hcond hbody => 
+    cases hbody
+    hammer
+  | if_false _ _ _ _ _ hcond hbody =>
+    cases hbody
+    hammer
+
+example (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
+  hammer
+  sorry
 
 theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
   constructor
@@ -24,20 +35,23 @@ theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), 
   }
 
 theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s') := by
-  constructor <;> 
-  intro h <;>
-  cases h with 
-  | seq _ _ _ _ _ h1 h2
+  constructor
   {
-    cases h1 
-    hammer [BigStep.seq]
+    intro h
+    hammer
+    sorry
   }
   {
-    cases h2 
-    repeat apply BigStep.seq <;> try assumption
+    intro h
+    cases h with | seq _ _ _ s1 _ h1 ht =>
+    cases ht with | seq _ _ _ s2 _ h2 h3 => 
+    have hi: (((c1;;c2), s) ==> s2) := by
+      apply BigStep.seq <;>
+      assumption
+    apply BigStep.seq <;> try assumption
   }
 
-theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE b DO c ELSE Com.skip)) := by
+example (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE b DO c ELSE Com.skip)) := by
   intros s t
   constructor
   {
@@ -54,52 +68,23 @@ theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE
     | if_true _ _ _ _ _ _ hb =>
         cases hb; apply BigStep.while_true <;> assumption
     | if_false _ _ _ _ _ _ hb =>
-        cases hb; apply BigStep.while_false; assumption
+        have heq : (s = t) := by hammer; sorry
+        hammer [BigStep.while_false]
   }
 
+theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE b DO c ELSE Com.skip)) := by
+  hammer [BigStep.while_false, BigStep.if_true, BigStep.skip, BigStep.if_false, BigStep.seq, BigStep.while_true]
+  repeat sorry
 
 theorem triv_if (c: Com) (b: BExp): ((IF b THEN c ELSE c) ~ c) := by
-  intros s t
-  constructor
-  intro h; cases h <;> assumption 
-  intro h
-  cases hc: (beval b s)
   hammer [BigStep.if_true, BigStep.if_false]
-  hammer [BigStep.if_true, BigStep.if_false]
-
-syntax "ass_trivial" : tactic
-macro_rules | `(tactic | ass_trivial) => `(tactic | (assumption; try trivial))
-
-syntax "if_true_false" : tactic
-macro_rules | `(tactic | if_true_false) => `(tactic |  (first | apply BigStep.if_true; ass_trivial | apply BigStep.if_false; ass_trivial))
-
-syntax "ite_both" : tactic
-macro_rules 
-  | `(tactic| ite_both )  => `(tactic | 
-        first | (apply BigStep.if_true; ass_trivial); if_true_false | (apply BigStep.if_false; ass_trivial); (try if_true_false))
+  sorry
 
 theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2) 
    ~ 
    (IF b2 THEN (IF b1 THEN c11 ELSE c2) ELSE (IF b1 THEN c12 ELSE c2)) := by
-  intros s t
-  constructor
-  intro h
-  cases h with
-    | if_true  _ _ _ _ _ _ hb => {
-      cases hb <;> ite_both
-    }
-    | if_false => {
-      by_cases (beval b2 s = true) <;> ite_both
-    }
-
-  intro h
-  cases h with
-    | if_true  _ _ _ _ _ _ hb => {
-      cases hb <;> ite_both
-    }
-    | if_false _ _ _ _ _ _ hb => {
-      cases hb <;> ite_both
-    }
+  hammer [BigStep.if_true, BigStep.if_false]
+  repeat sorry
 
 
 theorem sim_while_cong_aux:
@@ -114,12 +99,11 @@ theorem sim_while_cong_aux:
       | if_true => cases rn
       | if_false => cases rn
       | while_false cond d s' hcond=> {
-        try hammer
+        cases rn
         hammer [BigStep.while_false]
       }
       | while_true cond d s' t' u hcond hb hr ih_c ih_r=> {
         cases rn
-        try hammer
         hammer [BigStep.while_true]
       }
 
@@ -143,28 +127,24 @@ theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
   generalize rn : (c, s) = p
   rw [rn] at h_0
   induction h_0 generalizing s u c with
-    | skip => cases rn; cases h_1; rfl
-    | assign => cases rn; cases h_1; rfl
+    | skip => cases rn; hammer; sorry
+    | assign => cases rn; hammer; sorry
     | seq _ _ _ t' _ _ _ ih ih' => 
       cases rn
-      cases h_1 with | seq _ _ _ v _ _ ht'
-      have h_mid : (v = t') := by
-        apply ih; assumption; rfl
-      hammer
+      --hammer -- cannot run tactic because it returns an error and the file doesn't compile
+      sorry
     | if_true _ _ _ _ _ _ _ ih =>
       cases rn
-      cases h_1 with
-        | if_true => hammer
-        | if_false => trivial
+      hammer
+      sorry
     | if_false cond ci ce s' t' hcond hobdy ih =>
       cases rn
-      cases h_1 with
-        | if_true => trivial
-        | if_false => hammer
+      hammer
+      sorry
     | while_true _ _ _ t' _ _ _ _ ih ih' => 
       cases rn
-      cases h_1 with
-        | while_true _ _ _ v _ _ hbody _ => hammer
-        | while_false => trivial
+      -- hammer
+      sorry
     | while_false =>
-      cases rn; cases h_1 <;> trivial
+      cases rn; hammer; sorry
+
