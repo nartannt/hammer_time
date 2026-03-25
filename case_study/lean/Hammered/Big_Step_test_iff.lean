@@ -1,13 +1,12 @@
 import Definitions.Com_test
 import Hammer
---example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by
---  try hammer [BigStep.seq, BigStep.assign]
---  apply BigStep.seq <;> apply BigStep.assign
-set_option trace.auto.tptp.printQuery true
-set_option trace.auto.tptp.result true
-#check blabla
+
+example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by
+  try hammer [BigStep.seq, BigStep.assign]
+  apply BigStep.seq <;> apply BigStep.assign
+
 example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
-  hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, blabla] {disableAesop := true}
+  hammer [BigStep.if_true, BigStep.if_false, BigStep.skip]
   sorry
 
 theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
@@ -21,7 +20,7 @@ theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE 
     hammer
 
 example (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
-  hammer {disableAesop := true}
+  hammer
   repeat sorry
 
 theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
@@ -39,7 +38,7 @@ theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s'
   constructor
   {
     intro h
-    hammer
+    try hammer [BigStep.seq]
     sorry
   }
   {
@@ -67,9 +66,10 @@ example (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE b DO c ELSE 
     intro h'
     cases h' with
     | if_true _ _ _ _ _ _ hb =>
+        --hammer [BigStep.while_true] -- this one times out
+        try hammer [BigStep.while_true] {disableAesop := true}
         cases hb; apply BigStep.while_true <;> assumption
     | if_false _ _ _ _ _ _ hb =>
-        have heq : (s = t) := by hammer; sorry
         hammer [BigStep.while_false]
   }
 
@@ -79,12 +79,12 @@ theorem unfold_while (c: Com) (b: BExp) : ((WHILE b DO c) ~ (IF b THEN c;; WHILE
 
 theorem triv_if (c: Com) (b: BExp): ((IF b THEN c ELSE c) ~ c) := by
   hammer [BigStep.if_true, BigStep.if_false]
-  sorry
+  repeat sorry
 
 theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2) 
    ~ 
    (IF b2 THEN (IF b1 THEN c11 ELSE c2) ELSE (IF b1 THEN c12 ELSE c2)) := by
-  hammer [BigStep.if_true, BigStep.if_false]
+  try hammer [BigStep.if_true, BigStep.if_false] {disableAesop := true}
   repeat sorry
 
 
@@ -128,19 +128,23 @@ theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
   generalize rn : (c, s) = p
   rw [rn] at h_0
   induction h_0 generalizing s u c with
-    | skip => cases rn; hammer; sorry
-    | assign => cases rn; hammer; sorry
+    | skip => 
+      cases rn
+      -- try hammer -- times out
+      sorry
+    | assign => cases rn; hammer
     | seq _ _ _ t' _ _ _ ih ih' => 
       cases rn
       --hammer -- cannot run tactic because it returns an error and the file doesn't compile
+      hammer
       sorry
     | if_true _ _ _ _ _ _ _ ih =>
       cases rn
-      hammer
+      try hammer {disableAesop := true}
       sorry
     | if_false cond ci ce s' t' hcond hobdy ih =>
       cases rn
-      hammer
+      try hammer {disableAesop := true}
       sorry
     | while_true _ _ _ t' _ _ _ _ ih ih' => 
       cases rn
