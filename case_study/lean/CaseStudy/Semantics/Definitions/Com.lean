@@ -39,7 +39,7 @@ def state.update (name : String) (val : Int) (s : State) : State := λname' ↦ 
 
 --declare_syntax_cat mod_state
 
-notation (name := eval_state) s "[" name "↦" val "]" => state.update name val s 
+notation (name := eval_state) s "[" name "↦" val "]" => state.update name val s
 notation (name := seq_semicolon) s_1 ";;" s_2 => Com.seq s_1 s_2
 notation (name := assign_eq) var_name "::=" expr => Com.assign var_name expr
 notation (name := ite_term) "IF" cond "THEN" expr_1 "ELSE" expr_2 => Com.ite cond expr_1 expr_2
@@ -66,7 +66,7 @@ notation (name := big_step_judgement) prog_init_state_pair "==>" final_state => 
 set_option quotPrecheck false
 notation (name := sem_equivalence) p "~" p' => forall s t, ((p, s) ==> t) <-> ((p', s) ==> t)
 
-inductive SmallStep : Com × State -> Com × State -> Prop where 
+inductive SmallStep : Com × State -> Com × State -> Prop where
   | var_assign (x a s) : SmallStep (x ::= a, s) (SKIP, s[x ↦ (aeval a s)])
   | seq_1 (c_2 s) : SmallStep (SKIP ;; c_2, s) (c_2, s)
   | seq_2 (c_1 c_1' c_2 s s') : SmallStep (c_1 , s) (c_1', s') -> SmallStep (c_1 ;; c_2, s) (c_1' ;; c_2, s')
@@ -77,7 +77,7 @@ inductive SmallStep : Com × State -> Com × State -> Prop where
 
 inductive RTC {α : Type} : (R : α → α → Prop) -> (a : α) -> (b : α) → Prop
   | refl R a : RTC R a a
-  | step (b: α) c : (R a b -> RTC R b c ->  RTC R a c)
+  | step R a (b: α) c : (R a b -> RTC R b c ->  RTC R a c)
 
 
 theorem RTC_single {α : Type} {R : α → α → Prop} {a b : α} (hab : R a b) : RTC R a b := by
@@ -85,19 +85,19 @@ theorem RTC_single {α : Type} {R : α → α → Prop} {a b : α} (hab : R a b)
   assumption
   apply RTC.refl
 
-theorem RTC_trans {α : Type} {R : α → α → Prop} {a b c : α} (hab : RTC R a b) (hbc : RTC R b c) : RTC R a c := by
-    induction hab with
-      | refl => assumption
-      | step _ _ _ _ ih => 
-        apply RTC.step
-        assumption
-        apply ih
-        assumption
+theorem RTC_trans {α : Type} {R : α → α → Prop} {a b c : α}
+    (hab : RTC R a b) (hbc : RTC R b c) : RTC R a c := by
+  induction hab with
+    | refl _ => assumption
+    | step _ _ _ _ _ ih =>
+      apply RTC.step
+      assumption
+      apply ih
+      assumption
 
 --notation (name := small_step_judgement) init_config "->*" final_config => SmallStep init_config final_config
 infixr:100 "->>" => SmallStep
 infixr:100 "->*" => RTC SmallStep
 
-def final : Com × State -> Prop  
+def final : Com × State -> Prop
   | cs => ¬ (exists cs', cs ->> cs')
-

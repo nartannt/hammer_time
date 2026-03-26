@@ -1,4 +1,4 @@
-import Definitions.Com_test
+import CaseStudy.Semantics.Definitions.Com_test
 import Hammer
 --example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by
 --  try hammer [BigStep.seq, BigStep.assign]
@@ -31,7 +31,7 @@ example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), 
 theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
   intro h
   cases h with
-  | if_true _ _ _ _ _ hcond hbody => 
+  | if_true _ _ _ _ _ hcond hbody =>
     cases hbody
     hammer
   | if_false _ _ _ _ _ hcond hbody =>
@@ -53,7 +53,8 @@ theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), 
     hammer
   }
 
-theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s') := by
+theorem seq_assoc {c1 c2 c3 s s'} :
+    (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s') := by
   constructor
   {
     intro h
@@ -63,7 +64,7 @@ theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s'
   {
     intro h
     cases h with | seq _ _ _ s1 _ h1 ht =>
-    cases ht with | seq _ _ _ s2 _ h2 h3 => 
+    cases ht with | seq _ _ _ s2 _ h2 h3 =>
     have hi: (((c1;;c2), s) ==> s2) := by
       apply BigStep.seq <;>
       assumption
@@ -99,14 +100,14 @@ theorem triv_if (c: Com) (b: BExp): ((IF b THEN c ELSE c) ~ c) := by
   hammer [BigStep.if_true, BigStep.if_false]
   sorry
 
-theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2) 
-   ~ 
+theorem commute_if {b1 b2 c11 c12 c2} : (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2)
+   ~
    (IF b2 THEN (IF b1 THEN c11 ELSE c2) ELSE (IF b1 THEN c12 ELSE c2)) := by
   hammer [BigStep.if_true, BigStep.if_false]
   repeat sorry
 
 
-theorem sim_while_cong_aux:
+theorem sim_while_cong_aux {b c s t c'} :
   ((WHILE b DO c,s) ==> t)  -> (c ~ c') ->  ((WHILE b DO c',s) ==> t) := by
     intros h
     generalize rn : (WHILE b DO c, s) = p
@@ -128,19 +129,19 @@ theorem sim_while_cong_aux:
 
 
 
-theorem sim_while_cong: (c ~ c') -> (WHILE b DO c) ~ (WHILE b DO c') := by
+theorem sim_while_cong {c c' b} : (c ~ c') -> (WHILE b DO c) ~ (WHILE b DO c') := by
   hammer
 
-theorem sim_refl:  ( c ~ c ) := by
+theorem sim_refl {c}:  ( c ~ c ) := by
   hammer
 
-theorem sim_sym:   ((c ~ c') <-> (c' ~ c)) := by 
+theorem sim_sym {c c'} :   ((c ~ c') <-> (c' ~ c)) := by
   hammer
 
-theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by 
+theorem sim_trans {c c' c''} : ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by
   hammer
 
-theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
+theorem big_step_determ {c s t u}: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
   intro h
   rcases h with ⟨h_0, h_1⟩
   generalize rn : (c, s) = p
@@ -148,9 +149,9 @@ theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
   induction h_0 generalizing s u c with
     | skip => cases rn; hammer; sorry
     | assign => cases rn; hammer; sorry
-    | seq _ _ _ t' _ _ _ ih ih' => 
+    | seq _ _ _ t' _ _ _ ih ih' =>
       cases rn
-      --hammer -- cannot run tactic because it returns an error and the file doesn't compile
+      -- hammer -- cannot run tactic because it returns an error and the file doesn't compile
       sorry
     | if_true _ _ _ _ _ _ _ ih =>
       cases rn
@@ -160,10 +161,9 @@ theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
       cases rn
       hammer
       sorry
-    | while_true _ _ _ t' _ _ _ _ ih ih' => 
+    | while_true _ _ _ t' _ _ _ _ ih ih' =>
       cases rn
       -- hammer
       sorry
     | while_false =>
       cases rn; hammer; sorry
-
