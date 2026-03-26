@@ -48,7 +48,7 @@ notation (name := ite_term) "IF" cond "THEN" expr_1 "ELSE" expr_2 => Com.ite con
 notation (name := while_term) "WHILE" cond "DO" expr => Com.while cond expr
 notation (name := skip_term) "SKIP" => Com.skip
 
-@[mk_iff blabla]
+@[mk_iff]
 inductive BigStep : Com × State -> State -> Prop where
   | skip (s) : BigStep (Com.skip, s) s
   | assign (x a s) :

@@ -5,10 +5,28 @@ import Hammer
 --  apply BigStep.seq <;> apply BigStep.assign
 set_option trace.auto.tptp.printQuery true
 set_option trace.auto.tptp.result true
-#check blabla
+set_option hammer.preprocessingDefault "no_preprocessing"
+set_option hammer.disableAesopDefault true
+set_option hammer.autoPremisesDefault 100
+set_option trace.hammer.premises true
+
+theorem tmp_premise (s: State) (t: State) (b: BExp) : (IF b THEN SKIP ELSE SKIP, s)==>t  := by sorry
 example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
-  hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, blabla] {disableAesop := true}
-  sorry
+  intro h
+  hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, tmp_premise] {disableAesop := true, autoPremises := 100}
+  rw [bigStep_iff] at *
+  simp_all
+  rcases h with h1 | h2
+  {
+    skip
+    rcases h1 with ⟨B, S, T, s_1, h1, h2, ⟨ha, ⟨hb, hc⟩⟩, h4⟩
+    hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, bigStep_iff] {disableAesop := true}
+  }
+  {
+    hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, bigStep_iff] {disableAesop := true}
+  }
+  repeat sorry
+
 
 theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
   intro h
@@ -21,7 +39,7 @@ theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE 
     hammer
 
 example (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
-  hammer {disableAesop := true}
+  hammer [BigStep.assign, bigStep_iff] {disableAesop := true}
   repeat sorry
 
 theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
@@ -39,7 +57,7 @@ theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s'
   constructor
   {
     intro h
-    hammer
+    hammer [bigStep_iff]
     sorry
   }
   {

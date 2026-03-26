@@ -26,7 +26,14 @@ theorem inversion_seq (s: State) (t: State) (c1: Com) (c2: Com) :
     ((c1;;c2, s) ==> t) -> (exists s', ((c1, s)==> s') ∧ ((c2, s') ==> t)) := by sorry
 theorem inversion_ite (cond: BExp) (ci: Com) (ce: Com) (s: State) (t: State) : 
     ((IF cond THEN ci ELSE ce, s) ==> t) -> (( (beval cond s) ∧ ((ci, s) ==> t))
-                                            ∨(¬(beval cond s) ∧ ((ce, s) ==> t)) ) := by sorry
+                                            ∨(¬(beval cond s) ∧ ((ce, s) ==> t)) ) := by
+                      intros h
+                      cases h with
+                        | if_true cond _ _ _ _ hcond hbody => {
+                          left
+                          trivial
+                        }
+                        | if_false cond _ _ _ _ hcond hbody => {right; trivial}
 theorem inversion_while (cond: BExp) (cl: Com) (s: State) (t: State) : 
     ((WHILE cond DO cl, s) ==> t) -> (  (exists s', (beval cond s) ∧ ((cl, s) ==> s') ∧ ((WHILE cond DO cl, s') ==> t) ) 
                                      ∨ (¬(beval cond s) ∧ (t = s)) ) := by sorry
