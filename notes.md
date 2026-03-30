@@ -28,10 +28,10 @@
 
 ## Tanguy
 
-    - test zipperposition in portfolio mode on the generated tptp files
-    - test zipperposition with e on the generated tptp files
     - finishing to fix and lint lean project
     - investigate how to make tptp files human readable or at least more so
+    - look into transformation of tptp files to simplify strange encodings 
+    - Lean-Auto expects lemmas / props for inductive definitions to be manually passed when used in conjunction with atps: does LH (or its premise selector) try to do this? or is this the reason that we always have to manually add the inductive definition lemmas when calling `hammer`?
 
 ## Xavier
 
@@ -46,3 +46,4 @@
     
     - how many lemmas / facts does Isabelle send to its provers and zipperposition in particular
     - what are possible reasons that zipp only seems to be able to handle so few lemmas in the lean case
+
