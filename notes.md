@@ -32,6 +32,12 @@
     - investigate how to make tptp files human readable or at least more so
     - look into transformation of tptp files to simplify strange encodings 
     - Lean-Auto expects lemmas / props for inductive definitions to be manually passed when used in conjunction with atps: does LH (or its premise selector) try to do this? or is this the reason that we always have to manually add the inductive definition lemmas when calling `hammer`?
+        - In the lean-auto paper, there is special support for inductive types in the translation.
+        However :
+            Currently, Lean-auto supports polymorphic, nested, and mutual inductive types when
+            SMT solvers are used as the backend ATP. For other ATPs or unsupported inductive types,
+            users can always manually supply the properties related to the inductive types as a workaround.
+            (p.16-17)
 
 ## Xavier
 
