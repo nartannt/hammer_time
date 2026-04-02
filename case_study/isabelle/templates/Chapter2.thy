@@ -9,12 +9,6 @@ text\<open>
 Use the \textbf{value} command to evaluate the following expressions:
 \<close>
 
- "1 + (2::nat)"
- "1 + (2::int)"
- "1 - (2::nat)"
- "1 - (2::int)"
- "[a,b] @ [c,d]"
-
 text\<open>
 \endexercise
 
@@ -32,11 +26,31 @@ Prove that @{const add} is associative and commutative.
 You will need additional lemmas.
 \<close>
 
+lemma thisisthefactiwanttosee: "add n 0 = n"
+  apply (induction n)
+   apply simp
+   apply simp
+  done
+
+
 lemma add_assoc: "add (add m n) p = add m (add n p)"
-(* your definition/proof here *)
+  oops
+
+lemma "add n (Suc m) = Suc (add n m)"
+  sledgehammer [overlord, max_facts = 2]
 
 lemma add_comm: "add m n = add n m"
-(* your definition/proof here *)
+proof (induction m)
+  case 0
+  show ?case sledgehammer [provers = vampire,  max_facts = 2, overlord]
+next
+  case (Suc m)
+  show ?case 
+    apply auto
+
+  
+  
+
 
 text\<open> Define a recursive function \<close>
 

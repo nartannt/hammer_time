@@ -42,6 +42,7 @@
 ## Xavier
 
     - investigate Isabelle invocations
+        - Do a side by side of natural number game.
     - PR / issue for different (ie. Isabelle-like) options for zipperposition 
 
 ## Jasmin
