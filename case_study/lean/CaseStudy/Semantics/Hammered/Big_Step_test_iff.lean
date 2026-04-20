@@ -1,4 +1,4 @@
-import Definitions.Com_test
+import CaseStudy.Semantics.Definitions.Com_test
 import Hammer
 
 example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by

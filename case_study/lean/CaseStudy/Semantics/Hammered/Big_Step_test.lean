@@ -1,4 +1,4 @@
-import Definitions.Com_test
+import CaseStudy.Semantics.Definitions.Com_test
 import Hammer
 
 set_option trace.auto.tptp.printQuery true

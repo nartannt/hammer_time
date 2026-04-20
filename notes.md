@@ -47,6 +47,22 @@
     - the tptp file seems to be missing lemmas that the hammer should be translating (is this the translation silently failing?)
       this is likely due to the incomplete translation and monomorphisation procedure of LA and may explain why reducing the number of premises is helpful, if among 100 candidate premises 5 are necessary and that monomorphisation only runs for a set time or fuel, it is likely that at least one of the 5 premises doesn't make it through, whereas if fewer candidate premises are given, then perhaps all the necessary ones can be processed
 
+## Translation and Equality
+    
+    In the LeanAuto paper, the authors seem to go to great length to ensure that definitionally equal terms in Lean are represented by equal terms in the translation. This seems to be both computationally demanding and incomplete. Given that Zipperposition is made to specifically handle equality, it seems strange that they do not simply attempt to encode these equalities in HOL rather than deal with them in the translation. Perhaps I missed the part where they do this, perhaps I missed the logical constraints which make this impossible.
+
+    In fact handling definitional equality seems to be one of the major performance issues throughout the paper, they seem to attempt several methods to deal with this and the fact that I haven't found a mention of trying to give them to Zipperposition (by some encoding or translation) is surprising.
+
+## Monomorphisation
+
+    The monomorphisation procedure is very similar (ie. the same) to that of the one we had in the iterative monomorphisation paper
+    It differs in two key ways:
+        - The bounds are very different, I can spot the following:
+            * total number of matches
+            * heartbeats for unification of constants
+            * heartbeats for unifications of terms
+        - It's unclear that they filter the unification by function symbol, this was the most significant heuristic in our paper, this may be partly for technical reasons, they don't have to just match types but also transform the function symbols however, if it is indeed the case that they don't have some similar kind of grouping it could cause the monomorphisation procedure to be much less efficient than it could be. This point is mostly speculation.
+
 
 
 # Questions

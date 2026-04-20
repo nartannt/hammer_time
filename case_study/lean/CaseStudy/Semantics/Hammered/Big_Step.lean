@@ -1,4 +1,4 @@
-import CaseStudy.Semantics.Definitions.Com_test
+import CaseStudy.Semantics.Definitions.Com
 import Hammer
 --example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by
 --  try hammer [BigStep.seq, BigStep.assign]
@@ -10,37 +10,49 @@ set_option hammer.disableAesopDefault true
 set_option hammer.autoPremisesDefault 100
 set_option trace.hammer.premises true
 
-theorem tmp_premise (s: State) (t: State) (b: BExp) : (IF b THEN SKIP ELSE SKIP, s)==>t  := by sorry
+theorem inversion_skip (s: State) (t: State) : ((SKIP, s) ==> t) -> t = s := by 
+    --try hammer
+    intro h; cases h; rfl
+theorem inversion_ite (cond: BExp) (ci: Com) (ce: Com) (s: State) (t: State) : 
+    ((IF cond THEN ci ELSE ce, s) ==> t) -> (( (beval cond s) ∧ ((ci, s) ==> t))
+                                            ∨(¬(beval cond s) ∧ ((ce, s) ==> t)) ) := by
+                      intros h
+                      cases h with
+                        | if_true cond _ _ _ _ hcond hbody => {
+                          left
+                          trivial
+                        }
+                        | if_false cond _ _ _ _ hcond hbody => {right; trivial}
 example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
-  intro h
-  hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, tmp_premise] {disableAesop := true, autoPremises := 100}
-  rw [bigStep_iff] at *
-  simp_all
-  rcases h with h1 | h2
-  {
-    skip
-    rcases h1 with ⟨B, S, T, s_1, h1, h2, ⟨ha, ⟨hb, hc⟩⟩, h4⟩
-    hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, bigStep_iff] {disableAesop := true}
-  }
-  {
-    hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, bigStep_iff] {disableAesop := true}
-  }
-  repeat sorry
+  hammer [inversion_skip, inversion_ite] {disableAesop := true, autoPremises := 100}
 
 
 theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
   intro h
-  cases h with
-  | if_true _ _ _ _ _ hcond hbody =>
-    cases hbody
-    hammer
-  | if_false _ _ _ _ _ hcond hbody =>
-    cases hbody
-    hammer
+  hammer [inversion_skip, inversion_ite] {disableAesop := true, autoPremises := 100}
+
+theorem inversion_asign (x: String) (a: AExp) (s: State) (t: State) : ((Com.assign x a, s) ==> t) -> t = s[x ↦ (aeval a s)] 
+  := by
+    intro h
+    --try hammer
+    --hammer
+    cases h
+    rfl
 
 example (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
-  hammer [BigStep.assign, bigStep_iff] {disableAesop := true}
-  repeat sorry
+  constructor
+  {
+    hammer [BigStep.assign, inversion_assign] {disableAesop := true, autoPremises := 2}
+    --sorry
+  }
+  {
+    intro h
+    --rw [h]
+    --apply BigStep.assign
+
+    hammer [BigStep.assign, inversion_assign]  {disableAesop := true, autoPremises := 3}
+  }
+
 
 theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
   constructor
