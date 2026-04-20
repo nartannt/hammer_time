@@ -17,13 +17,6 @@
         + not using other provers (Vampire ...) (note that the Vampire support for HOL is not stable yet)
 
 
-# Observations and things to figure out
-
-    - current invocations of zipperposition don't seem to be able to handle more than a few dozen lemmas
-    - the tptp file seems to be missing lemmas that the hammer should be translating (is this the translation silently failing?)
-
-
-
 # Working on
 
 ## Tanguy
@@ -38,6 +31,7 @@
             SMT solvers are used as the backend ATP. For other ATPs or unsupported inductive types,
             users can always manually supply the properties related to the inductive types as a workaround.
             (p.16-17)
+    - investigate if it's possible to manipulate the LA monomorphisation procedure to prioritise certain lemmas and if not have some kind of feedback on the lemmas whose translation failed or couldn't be done in time
 
 ## Xavier
 
@@ -46,6 +40,14 @@
     - PR / issue for different (ie. Isabelle-like) options for zipperposition 
 
 ## Jasmin
+
+# Observations and things to figure out
+
+    - current invocations of zipperposition don't seem to be able to handle more than a few dozen lemmas
+    - the tptp file seems to be missing lemmas that the hammer should be translating (is this the translation silently failing?)
+      this is likely due to the incomplete translation and monomorphisation procedure of LA and may explain why reducing the number of premises is helpful, if among 100 candidate premises 5 are necessary and that monomorphisation only runs for a set time or fuel, it is likely that at least one of the 5 premises doesn't make it through, whereas if fewer candidate premises are given, then perhaps all the necessary ones can be processed
+
+
 
 # Questions
 
