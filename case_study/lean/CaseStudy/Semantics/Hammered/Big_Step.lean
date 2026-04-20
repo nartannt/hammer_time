@@ -39,19 +39,20 @@ theorem inversion_asign (x: String) (a: AExp) (s: State) (t: State) : ((Com.assi
     cases h
     rfl
 
-example (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
-  constructor
-  {
-    hammer [BigStep.assign, inversion_assign] {disableAesop := true, autoPremises := 2}
-    --sorry
-  }
-  {
+example (s: State) (s': State) : (s = s') -> ((SKIP, s) ==> s') := by
+  --rw [h]
+  --apply BigStep.skip
+  --#check BigStep.skip
+  --have h':(forall x: State, (SKIP, s) ==> s) := by intro; apply BigStep.skip
+  --have h':(SKIP, s) ==> s := by apply BigStep.skip
+  --have h':(forall a: State, (SKIP, a) ==> a) := by intro; apply BigStep.skip
+  hammer [BigStep.skip] {autoPremises := 5}
+
+example (x: String) (a: AExp) (s: State) (s': State) :  (s' = s[x ↦ (aeval a s)]) -> (((x ::= a), s) ==> s' ) := by
     intro h
     --rw [h]
     --apply BigStep.assign
-
-    hammer [BigStep.assign, inversion_assign]  {disableAesop := true, autoPremises := 3}
-  }
+    hammer [BigStep.assign, h]  {disableAesop := true, autoPremises := 16}
 
 
 theorem assign_sim (x: String) (a: AExp) (s: State) (s': State) :  (((x ::= a), s) ==> s' ) <-> (s' = s[x ↦ (aeval a s)]) := by
