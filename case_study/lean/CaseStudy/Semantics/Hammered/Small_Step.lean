@@ -1,5 +1,5 @@
-import Definitions.Com
-import Hammered.Big_Step
+import CaseStudy.Semantics.Definitions.Com
+import CaseStudy.Semantics.Hammered.Big_Step
 import Hammer
 
 theorem small_step_deterministic : (cs ->> cs') -> (cs ->> cs'') -> (cs'' = cs') := by

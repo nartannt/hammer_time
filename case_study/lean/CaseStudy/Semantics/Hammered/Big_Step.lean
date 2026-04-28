@@ -25,6 +25,21 @@ theorem inversion_ite (cond: BExp) (ci: Com) (ce: Com) (s: State) (t: State) :
                         | if_false cond _ _ _ _ hcond hbody => {right; trivial}
 example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
   hammer [inversion_skip, inversion_ite] {disableAesop := true, autoPremises := 100}
+example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
+  intro h
+  hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, bigStep_iff] {disableAesop := true, autoPremises := 10}
+  rw [bigStep_iff] at *
+  simp_all
+  rcases h with h1 | h2
+  {
+    skip
+    rcases h1 with ⟨B, S, T, s_1, h1, h2, ⟨ha, ⟨hb, hc⟩⟩, h4⟩
+    hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, bigStep_iff] {disableAesop := true}
+  }
+  {
+    hammer [BigStep.if_true, BigStep.if_false, BigStep.skip, bigStep_iff] {disableAesop := true}
+  }
+  repeat sorry
 
 
 theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
