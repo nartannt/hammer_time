@@ -1,18 +1,76 @@
 import Hammer
+import Mathlib.Tactic.MkIffOfInductiveProp
+import Lean.Expr
 
 set_option trace.auto.tptp.printQuery true
 set_option trace.auto.tptp.result true
 set_option hammer.preprocessingDefault "no_preprocessing"
 set_option hammer.disableAesopDefault true
-set_option hammer.autoPremisesDefault 100
+set_option hammer.autoPremisesDefault 16
 set_option trace.hammer.premises true
 
 inductive A : Type
+
+@[mk_iff]
 inductive B : A -> Prop where
   | b x : B x 
 
 #check B.b
 
+#check 0
+
+--def test := do
+--  let lctx ← Lean.MonadLCtx.getLCtx
+--  lctx.forM fun elem: Lean.LocalDecl => do
+--    let elemExpr := elem.toExpr
+--    dbg_trace f!"local declaration: {elemExpr}"
+
+elab "list_local_decls" : tactic => do
+    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
+    ctx.forM fun decl: Lean.LocalDecl => do
+      let declExpr := decl.toExpr -- Find the expression of the declaration.
+      let declName := decl.userName -- Find the name of the declaration.
+      dbg_trace f!"+ local decl: name: {declName} | expr: {declExpr}"
+
+elab "list_constants" : tactic => do
+    let env ← Lean.MonadEnv.getEnv -- get the local environment
+    let constants := env.constants -- get the local constants.
+    let mut max := 0
+    for cnst in constants do
+      --let cnstExpr := cnst.toExpr
+      max := max + 0
+      let (cnstName, cnstInfo) := cnst
+      if cnstInfo.isInductive && !cnstInfo.name.isInternal 
+        && !cnstInfo.name.toString.contains "Auto" 
+        && !cnstInfo.name.toString.contains "Aesop" 
+        && !cnstInfo.name.toString.contains "Batteries" 
+        && !cnstInfo.name.toString.contains "Std" 
+        && !cnstInfo.name.toString.contains "Duper" 
+        && !cnstInfo.name.toString.contains "System" 
+        && !cnstInfo.name.toString.contains "Hammer" 
+        && !cnstInfo.name.toString.contains "LLVM" 
+        && !cnstInfo.name.toString.contains "BitVec" 
+        && !cnstInfo.name.toString.contains "Lean" then 
+        match cnstInfo with
+          | Lean.ConstantInfo.inductInfo inductVal => 
+            let ctors := inductVal.ctors
+            let ctorsTypes := ctors.map (fun ctor ↦ 
+              match (Lean.Environment.find? env ctor) with
+                | some val => (Lean.ConstantInfo.toConstantVal val).type
+                | none => cnstInfo.type)
+            dbg_trace f!"+ local cnst: {cnstName} with constructors: {ctorsTypes}"
+          | _ => return
+      if max > 10000 then
+        return
+
 example : forall x: A, B x := by
   --have h':(forall x: A, B x) := by apply B.b
-  hammer [B.b] {autoPremises := 8}
+  --duper [*]
+  --auto [*]
+  --hammer {disableAesop := false, preprocessing := aesop}
+  --hammer
+  --aesop
+  --hammer [b_iff] {autoPremises := 8}
+  list_local_decls
+  list_constants
+  hammer {autoPremises := 8}
