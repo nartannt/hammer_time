@@ -8,6 +8,8 @@ set_option hammer.preprocessingDefault "no_preprocessing"
 set_option hammer.disableAesopDefault true
 set_option hammer.autoPremisesDefault 16
 set_option trace.hammer.premises true
+set_option trace.debug true
+set_option pp.rawOnError true
 
 inductive A : Type
 
@@ -16,8 +18,6 @@ inductive B : A -> Prop where
   | b x : B x 
 
 #check B.b
-
-#check 0
 
 --def test := do
 --  let lctx ← Lean.MonadLCtx.getLCtx
@@ -38,10 +38,9 @@ elab "list_constants" : tactic => do
     let mut max := 0
     let mut indCtors : List Lean.Expr := []
     for cnst in constants do
-      --let cnstExpr := cnst.toExpr
       max := max + 0
       let (cnstName, cnstInfo) := cnst
-      if cnstInfo.isInductive && !cnstInfo.name.isInternal 
+      if cnstInfo.isInductive && !cnstInfo.name.isInternal
         && !cnstInfo.name.toString.contains "Auto" 
         && !cnstInfo.name.toString.contains "Aesop" 
         && !cnstInfo.name.toString.contains "Batteries" 
@@ -49,9 +48,9 @@ elab "list_constants" : tactic => do
         && !cnstInfo.name.toString.contains "Duper" 
         && !cnstInfo.name.toString.contains "System" 
         && !cnstInfo.name.toString.contains "Hammer" 
-        && !cnstInfo.name.toString.contains "LLVM" 
-        && !cnstInfo.name.toString.contains "BitVec" 
-        && !cnstInfo.name.toString.contains "IO" 
+        --&& !cnstInfo.name.toString.contains "LLVM" 
+        --&& !cnstInfo.name.toString.contains "BitVec" 
+        --&& !cnstInfo.name.toString.contains "IO" 
         && !cnstInfo.name.toString.contains "Lean" then 
         match cnstInfo with
           | Lean.ConstantInfo.inductInfo inductVal => 
@@ -61,34 +60,30 @@ elab "list_constants" : tactic => do
                 | some val => (Lean.ConstantInfo.toConstantVal val).type
                 | none => cnstInfo.type)
             indCtors := ctorsTypes ++ indCtors
-            dbg_trace f!"+ local cnst: {cnstName} with constructors: {ctorsTypes}"
+            dbg_trace "+ local cnst: {cnstName} with constructors: {ctorsTypes}"
           | _ => return
       if max > 10000 then
         return
 
-      return 
-
-def inductive_definitions : List Lean.Expr :=
-    let constants := Lean.Environment.constants >> Lean.MonadEnv.getEnv
-    let rec cnstToIndDefs  (defsAcc : List Lean.Expr) (remainingCnsts : List (Int × Lean.ConstantInfo)) : (List Lean.Expr) :=
-      match remainingCnsts with
-        | [] => defsAcc
-        | (_, cnstInfo) :: cnstsRest =>
-          match cnstInfo with 
-            | Lean.ConstantInfo.inductInfo inductVal => 
-              let ctors := inductVal.ctors
-              let ctorsTypes := (fun env ↦ 
-                (List.filterMap (fun ctor ↦
-                  match Lean.Environment.find? env ctor with
-                    | some val => some (Lean.ConstantInfo.toConstantVal val).type
-                    | none => none) ctors ) ) >> Lean.MonadEnv.getEnv
-              cnstToIndDefs (ctorsTypes ++ defsAcc) cnstsRest
-            | _ => (cnstToIndDefs defsAcc cnstsRest)
-
-    cnstToIndDefs [] >> constants
+open Lean in
+def inductive_definitions : CoreM (List Expr) := do
+    let env ← MonadEnv.getEnv
+    let constants := Environment.constants env
+    let cnstToIndDefs (defsAcc: List Expr) _ (nextCnstInfo: ConstantInfo): (List Expr) :=
+        match nextCnstInfo with 
+          | ConstantInfo.inductInfo inductVal => 
+            let ctors := inductVal.ctors
+            let ctorsTypes := (List.filterMap (fun ctor ↦
+                match Environment.find? env ctor with
+                  | some val => some (ConstantInfo.toConstantVal val).type
+                  | none => none) ctors ) 
+            (ctorsTypes ++ defsAcc)
+          | _ => defsAcc
+    return SMap.fold cnstToIndDefs [] constants
 
 example : forall x: A, B x := by
   --have h':(forall x: A, B x) := by apply B.b
+  --have h': forall (x : A), B x := by apply B.b
   --duper [*]
   --auto [*]
   --hammer {disableAesop := false, preprocessing := aesop}
@@ -96,5 +91,7 @@ example : forall x: A, B x := by
   --aesop
   --hammer [b_iff] {autoPremises := 8}
   list_local_decls
+
   list_constants
+
   hammer {autoPremises := 8}
