@@ -1,0 +1,6 @@
+[[case]]
+name          = "add_zero_succ"
+auto_premises = 5
+pool_cap      = 50
+lean_file     = "case_study/lean/CaseStudy/HammerCases/AddZeroSucc.lean"
+isabelle_file = "case_study/isabelle/cases/AddZeroSucc.thy"

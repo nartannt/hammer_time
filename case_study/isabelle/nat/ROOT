@@ -1,0 +1,3 @@
+session "Nat_Basic" = "HOL" +
+  theories
+    Basic

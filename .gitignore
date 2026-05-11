@@ -5,3 +5,6 @@
 \#*#
 .mcp.json
 CLAUDE.md
+tmp/
+tptp_files
+__pycache__
