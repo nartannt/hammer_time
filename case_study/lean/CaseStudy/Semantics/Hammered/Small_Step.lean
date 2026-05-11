@@ -2,17 +2,18 @@ import CaseStudy.Semantics.Definitions.Com
 import CaseStudy.Semantics.Hammered.Big_Step
 import Hammer
 
+#exit
 theorem small_step_deterministic : (cs ->> cs') -> (cs ->> cs'') -> (cs'' = cs') := by
   intros h1 h2
   induction h1 generalizing cs'' with
-    | var_assign x a s => 
+    | var_assign x a s =>
       cases h2
       rfl
-    | seq_1 c2 s => 
+    | seq_1 c2 s =>
       cases h2 with
         | seq_1 => rfl
         | seq_2 _ _ _ _ _ h => cases h
-    | seq_2 c1 c1' c2 s s' h ih => 
+    | seq_2 c1 c1' c2 s s' h ih =>
       cases h2 with
         | seq_1 => cases h
         | seq_2 _ c2' _ _ s'' h' =>
@@ -45,7 +46,7 @@ theorem small_seq_congr : ((c_1, s_1) ->* (c, s_2)) -> (c_1;;c_2, s_1) ->* (c;;c
     | refl => cases rn; cases rn'; apply RTC.refl
     | step cs cs' ht hh ih =>
       cases rn; cases rn'
-      rcases cs with ⟨c_1', s_1'⟩ 
+      rcases cs with ⟨c_1', s_1'⟩
       have h: (RTC SmallStep (c_1';;c_2, s_1') (c;;c_2, s_2)) := by
         apply ih <;> rfl
 
@@ -131,7 +132,7 @@ theorem step_sem_imp : (cs ->> cs') -> (cs' ==> t) -> (cs ==> t) := by
     | if_true =>
       apply BigStep.if_true <;>
       assumption
-    | if_false => 
+    | if_false =>
       apply BigStep.if_false <;>
       assumption
     | while_loop =>
@@ -147,7 +148,7 @@ theorem small_imp_big : (cs ->* (SKIP, t)) -> (cs ==> t) := by
       cases rn
       apply BigStep.skip
     | step cs' cs'' hh ht ih =>
-      rcases cs' with ⟨c_1', s_1'⟩ 
+      rcases cs' with ⟨c_1', s_1'⟩
       cases rn
       simp at ih
       apply step_sem_imp <;>
@@ -227,9 +228,9 @@ theorem big_step_small_step_termination : (exists t, cs ==> t) <-> (exists cs', 
   {
     intro h
     cases h with | intro cs' h
-    rcases h with ⟨h, h'⟩ 
-    rcases cs with ⟨c, s⟩ 
-    rcases cs' with ⟨c', t⟩ 
+    rcases h with ⟨h, h'⟩
+    rcases cs with ⟨c, s⟩
+    rcases cs' with ⟨c', t⟩
     exists t
     rw [small_big_eq]
     have hc' : (c' = SKIP) := by
@@ -238,4 +239,3 @@ theorem big_step_small_step_termination : (exists t, cs ==> t) <-> (exists cs', 
     rw [<- hc']
     assumption
   }
-

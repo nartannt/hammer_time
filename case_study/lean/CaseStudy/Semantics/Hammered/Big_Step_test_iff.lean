@@ -1,6 +1,7 @@
 import CaseStudy.Semantics.Definitions.Com_test
 import Hammer
 
+#exit
 example (s: State) : (("x" ::= (AExp.num 5));; ("y" ::= (AExp.var "x")), s) ==> s["x" ↦ 5]["y" ↦ 5] := by
   try hammer [BigStep.seq, BigStep.assign]
   apply BigStep.seq <;> apply BigStep.assign
@@ -12,7 +13,7 @@ example (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), 
 theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE Com.skip), s) ==> t) -> t = s := by
   intro h
   cases h with
-  | if_true _ _ _ _ _ hcond hbody => 
+  | if_true _ _ _ _ _ hcond hbody =>
     cases hbody
     hammer
   | if_false _ _ _ _ _ hcond hbody =>
@@ -44,7 +45,7 @@ theorem seq_assoc : (((c1;; c2);; c3, s) ==> s') <-> ((c1;; (c2;; c3), s) ==> s'
   {
     intro h
     cases h with | seq _ _ _ s1 _ h1 ht =>
-    cases ht with | seq _ _ _ s2 _ h2 h3 => 
+    cases ht with | seq _ _ _ s2 _ h2 h3 =>
     have hi: (((c1;;c2), s) ==> s2) := by
       apply BigStep.seq <;>
       assumption
@@ -81,8 +82,8 @@ theorem triv_if (c: Com) (b: BExp): ((IF b THEN c ELSE c) ~ c) := by
   hammer [BigStep.if_true, BigStep.if_false]
   repeat sorry
 
-theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2) 
-   ~ 
+theorem commute_if: (IF b1 THEN (IF b2 THEN c11 ELSE c12) ELSE c2)
+   ~
    (IF b2 THEN (IF b1 THEN c11 ELSE c2) ELSE (IF b1 THEN c12 ELSE c2)) := by
   try hammer [BigStep.if_true, BigStep.if_false] {disableAesop := true}
   repeat sorry
@@ -116,10 +117,10 @@ theorem sim_while_cong: (c ~ c') -> (WHILE b DO c) ~ (WHILE b DO c') := by
 theorem sim_refl:  ( c ~ c ) := by
   hammer
 
-theorem sim_sym:   ((c ~ c') <-> (c' ~ c)) := by 
+theorem sim_sym:   ((c ~ c') <-> (c' ~ c)) := by
   hammer
 
-theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by 
+theorem sim_trans: ( (c ~ c') -> (c' ~ c'') -> (c ~ c'') ) := by
   hammer
 
 theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
@@ -128,12 +129,12 @@ theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
   generalize rn : (c, s) = p
   rw [rn] at h_0
   induction h_0 generalizing s u c with
-    | skip => 
+    | skip =>
       cases rn
       -- try hammer -- times out
       sorry
     | assign => cases rn; hammer
-    | seq _ _ _ t' _ _ _ ih ih' => 
+    | seq _ _ _ t' _ _ _ ih ih' =>
       cases rn
       --hammer -- cannot run tactic because it returns an error and the file doesn't compile
       hammer
@@ -146,10 +147,9 @@ theorem big_step_determ: (((c,s) ==> t) ∧ ((c,s) ==> u) ) -> (u = t) := by
       cases rn
       try hammer {disableAesop := true}
       sorry
-    | while_true _ _ _ t' _ _ _ _ ih ih' => 
+    | while_true _ _ _ t' _ _ _ _ ih ih' =>
       cases rn
       -- hammer
       sorry
     | while_false =>
       cases rn; hammer; sorry
-

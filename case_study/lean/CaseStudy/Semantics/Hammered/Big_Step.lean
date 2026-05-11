@@ -10,10 +10,11 @@ set_option hammer.disableAesopDefault true
 set_option hammer.autoPremisesDefault 100
 set_option trace.hammer.premises true
 
-theorem inversion_skip (s: State) (t: State) : ((SKIP, s) ==> t) -> t = s := by 
+#exit
+theorem inversion_skip (s: State) (t: State) : ((SKIP, s) ==> t) -> t = s := by
     --try hammer
     intro h; cases h; rfl
-theorem inversion_ite (cond: BExp) (ci: Com) (ce: Com) (s: State) (t: State) : 
+theorem inversion_ite (cond: BExp) (ci: Com) (ce: Com) (s: State) (t: State) :
     ((IF cond THEN ci ELSE ce, s) ==> t) -> (( (beval cond s) ∧ ((ci, s) ==> t))
                                             ∨(¬(beval cond s) ∧ ((ce, s) ==> t)) ) := by
                       intros h
@@ -46,7 +47,7 @@ theorem ite_skip_2 (s: State) (t: State) (b: BExp) : (((IF b THEN Com.skip ELSE 
   intro h
   hammer [inversion_skip, inversion_ite] {disableAesop := true, autoPremises := 100}
 
-theorem inversion_asign (x: String) (a: AExp) (s: State) (t: State) : ((Com.assign x a, s) ==> t) -> t = s[x ↦ (aeval a s)] 
+theorem inversion_asign (x: String) (a: AExp) (s: State) (t: State) : ((Com.assign x a, s) ==> t) -> t = s[x ↦ (aeval a s)]
   := by
     intro h
     --try hammer

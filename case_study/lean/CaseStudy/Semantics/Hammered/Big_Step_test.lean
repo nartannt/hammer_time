@@ -1,6 +1,7 @@
 import CaseStudy.Semantics.Definitions.Com_test
 import Hammer
 
+#exit -- this is breaking build
 set_option trace.auto.tptp.printQuery true
 set_option trace.auto.tptp.result true
 

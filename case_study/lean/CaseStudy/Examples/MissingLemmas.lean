@@ -15,7 +15,7 @@ inductive A : Type
 
 @[mk_iff]
 inductive B : A -> Prop where
-  | b x : B x 
+  | b x : B x
 
 #check B.b
 
@@ -41,21 +41,21 @@ elab "list_constants" : tactic => do
       max := max + 0
       let (cnstName, cnstInfo) := cnst
       if cnstInfo.isInductive && !cnstInfo.name.isInternal
-        && !cnstInfo.name.toString.contains "Auto" 
-        && !cnstInfo.name.toString.contains "Aesop" 
-        && !cnstInfo.name.toString.contains "Batteries" 
-        && !cnstInfo.name.toString.contains "Std" 
-        && !cnstInfo.name.toString.contains "Duper" 
-        && !cnstInfo.name.toString.contains "System" 
-        && !cnstInfo.name.toString.contains "Hammer" 
-        --&& !cnstInfo.name.toString.contains "LLVM" 
-        --&& !cnstInfo.name.toString.contains "BitVec" 
-        --&& !cnstInfo.name.toString.contains "IO" 
-        && !cnstInfo.name.toString.contains "Lean" then 
+        && !cnstInfo.name.toString.contains "Auto"
+        && !cnstInfo.name.toString.contains "Aesop"
+        && !cnstInfo.name.toString.contains "Batteries"
+        && !cnstInfo.name.toString.contains "Std"
+        && !cnstInfo.name.toString.contains "Duper"
+        && !cnstInfo.name.toString.contains "System"
+        && !cnstInfo.name.toString.contains "Hammer"
+        --&& !cnstInfo.name.toString.contains "LLVM"
+        --&& !cnstInfo.name.toString.contains "BitVec"
+        --&& !cnstInfo.name.toString.contains "IO"
+        && !cnstInfo.name.toString.contains "Lean" then
         match cnstInfo with
-          | Lean.ConstantInfo.inductInfo inductVal => 
+          | Lean.ConstantInfo.inductInfo inductVal =>
             let ctors := inductVal.ctors
-            let ctorsTypes := ctors.map (fun ctor ↦ 
+            let ctorsTypes := ctors.map (fun ctor ↦
               match (Lean.Environment.find? env ctor) with
                 | some val => (Lean.ConstantInfo.toConstantVal val).type
                 | none => cnstInfo.type)
@@ -70,13 +70,13 @@ def inductive_definitions : CoreM (List Expr) := do
     let env ← MonadEnv.getEnv
     let constants := Environment.constants env
     let cnstToIndDefs (defsAcc: List Expr) _ (nextCnstInfo: ConstantInfo): (List Expr) :=
-        match nextCnstInfo with 
-          | ConstantInfo.inductInfo inductVal => 
+        match nextCnstInfo with
+          | ConstantInfo.inductInfo inductVal =>
             let ctors := inductVal.ctors
             let ctorsTypes := (List.filterMap (fun ctor ↦
                 match Environment.find? env ctor with
                   | some val => some (ConstantInfo.toConstantVal val).type
-                  | none => none) ctors ) 
+                  | none => none) ctors )
             (ctorsTypes ++ defsAcc)
           | _ => defsAcc
     return SMap.fold cnstToIndDefs [] constants
@@ -93,5 +93,5 @@ example : forall x: A, B x := by
   list_local_decls
 
   list_constants
-
-  hammer {autoPremises := 8}
+  sorry
+  -- hammer {autoPremises := 8}
