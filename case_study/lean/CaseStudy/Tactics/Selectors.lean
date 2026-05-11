@@ -1,4 +1,5 @@
 import Lean.LibrarySuggestions
+import CaseStudy.Tactics.MyMePo
 
 section selectors
 
@@ -26,26 +27,28 @@ def combinedSelector (s1 s2 : Selector) : Selector := fun goal config => do
 
 /-- Look up a `Selector` by string name. -/
 def selectorByName : String → Option Selector
-  | "mepo"      => some (mepoSelector (useRarity := false))
-  | "mepo_rare" => some (mepoSelector (useRarity := true) (p := 0.6) (c := 2.4))
-  | "sqn"       => some sineQuaNonSelector
-  | "combined"  => some (combinedSelector
-                          (mepoSelector (useRarity := false))
-                          sineQuaNonSelector)
-  | _           => none
+  | "mepo"        => some (mepoSelector (useRarity := false))
+  | "mepo_rare"   => some (mepoSelector (useRarity := true) (p := 0.6) (c := 2.4))
+  | "mymepo"      => some (HammerCases.MyMePo.myMepoSelector (useRarity := false))
+  | "mymepo_rare" => some (HammerCases.MyMePo.myMepoSelector (useRarity := true))
+  | "sqn"         => some sineQuaNonSelector
+  | "random"      => some random
+  | "currentFile" => some currentFile
+  | "combined"    => some (combinedSelector
+                            (mepoSelector (useRarity := false))
+                            sineQuaNonSelector)
+  | _             => none
 
 /-- The reusable execution engine. -/
 def runSelectorCore (selector : Selector) (n : Nat) : TacticM Unit := do
-  let goal ← getMainGoal
   let config : LibrarySuggestions.Config := {
     maxSuggestions := n,
     caller := some "suggest",
     filter := fun _ => pure true,
     hint := none
   }
-
+  let goal ← getMainGoal
   let suggestions ← selector goal config
-
   if suggestions.isEmpty then
     logInfo "Selector found no suggestions."
   else
@@ -66,7 +69,8 @@ elab "select_premises " name:str n:(num)? : tactic => do
   let nNat := n.map (·.getNat) |>.getD 20
   match selectorByName nameStr with
   | none => throwError
-      "unknown selector {nameStr}; expected one of: \"mepo\", \"mepo_rare\", \"sqn\", \"combined\""
+      "unknown selector {nameStr}; expected one of:
+        \"mepo\", \"mepo_rare\", \"sqn\", \"currentFile\""
   | some s => runSelectorCore s nNat
 
 end selectors
