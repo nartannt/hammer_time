@@ -1,6 +1,8 @@
 import Hammer
 import Mathlib.Tactic.MkIffOfInductiveProp
 import Lean.Expr
+import CaseStudy.Tactics.MyMePo
+import CaseStudy.Tactics.Selectors
 
 set_option trace.auto.tptp.printQuery true
 set_option trace.auto.tptp.result true
@@ -13,7 +15,7 @@ set_option pp.rawOnError true
 
 inductive A : Type
 
-@[mk_iff]
+--@[mk_iff]
 inductive B : A -> Prop where
   | b x : B x
 
@@ -33,65 +35,30 @@ elab "list_local_decls" : tactic => do
       dbg_trace f!"+ local decl: name: {declName} | expr: {declExpr}"
 
 elab "list_constants" : tactic => do
-    let env ← Lean.MonadEnv.getEnv -- get the local environment
-    let constants := env.constants -- get the local constants.
-    let mut max := 0
-    let mut indCtors : List Lean.Expr := []
+    let env ← Lean.MonadEnv.getEnv
+    let constants := env.constants
     for cnst in constants do
-      max := max + 0
-      let (cnstName, cnstInfo) := cnst
-      if cnstInfo.isInductive && !cnstInfo.name.isInternal
-        && !cnstInfo.name.toString.contains "Auto"
-        && !cnstInfo.name.toString.contains "Aesop"
-        && !cnstInfo.name.toString.contains "Batteries"
-        && !cnstInfo.name.toString.contains "Std"
-        && !cnstInfo.name.toString.contains "Duper"
-        && !cnstInfo.name.toString.contains "System"
-        && !cnstInfo.name.toString.contains "Hammer"
-        --&& !cnstInfo.name.toString.contains "LLVM"
-        --&& !cnstInfo.name.toString.contains "BitVec"
-        --&& !cnstInfo.name.toString.contains "IO"
-        && !cnstInfo.name.toString.contains "Lean" then
-        match cnstInfo with
-          | Lean.ConstantInfo.inductInfo inductVal =>
-            let ctors := inductVal.ctors
-            let ctorsTypes := ctors.map (fun ctor ↦
-              match (Lean.Environment.find? env ctor) with
-                | some val => (Lean.ConstantInfo.toConstantVal val).type
-                | none => cnstInfo.type)
-            indCtors := ctorsTypes ++ indCtors
-            dbg_trace "+ local cnst: {cnstName} with constructors: {ctorsTypes}"
-          | _ => return
-      if max > 10000 then
-        return
+      let (cnstName, _cnstInfo) := cnst
+      if cnstName.toString.contains "__" then
+        dbg_trace "name: {cnstName}"
 
-open Lean in
-def inductive_definitions : CoreM (List Expr) := do
-    let env ← MonadEnv.getEnv
-    let constants := Environment.constants env
-    let cnstToIndDefs (defsAcc: List Expr) _ (nextCnstInfo: ConstantInfo): (List Expr) :=
-        match nextCnstInfo with
-          | ConstantInfo.inductInfo inductVal =>
-            let ctors := inductVal.ctors
-            let ctorsTypes := (List.filterMap (fun ctor ↦
-                match Environment.find? env ctor with
-                  | some val => some (ConstantInfo.toConstantVal val).type
-                  | none => none) ctors )
-            (ctorsTypes ++ defsAcc)
-          | _ => defsAcc
-    return SMap.fold cnstToIndDefs [] constants
+open Mathlib.Tactic.MkIff Lean Meta Elab
+elab "list_iff_ind" : tactic => do
+  let env ← Lean.MonadEnv.getEnv -- get the local environment
+  let constants := env.constants -- get the local constants.
+  for cnst in constants do
+    let (cnstName, cnstInfo) := cnst
+    match cnstInfo with
+      | .inductInfo inductVal =>
+        let indValTerm : Term ← PrettyPrinter.delab inductVal.type
+        let indValSyntax : Syntax := indValTerm.raw
+        try MetaM.run' do mkIffOfInductivePropImpl cnstName (cnstName.decapitalize.toString ++ "____iff").toName indValSyntax
+        catch _ => pure ()
+      | _ => pure ()
 
 example : forall x: A, B x := by
-  --have h':(forall x: A, B x) := by apply B.b
-  --have h': forall (x : A), B x := by apply B.b
-  --duper [*]
-  --auto [*]
-  --hammer {disableAesop := false, preprocessing := aesop}
-  --hammer
-  --aesop
-  --hammer [b_iff] {autoPremises := 8}
-  list_local_decls
+  list_iff_ind
 
-  list_constants
-  sorry
-  -- hammer {autoPremises := 8}
+  select_premises "mymepo"
+  select_premises "mepo"
+  hammer [] {}
