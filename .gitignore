@@ -8,3 +8,4 @@ CLAUDE.md
 tmp/
 tptp_files
 __pycache__
+*.exe
