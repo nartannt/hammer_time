@@ -20,12 +20,14 @@
 
 ## Tanguy
 
+    - work out how to integrate mk_iff function in our version of the hammer
     - finishing to fix and lint lean project
-    - look into transformation of tptp files to simplify strange encodings 
     - investigate if it's possible to manipulate the LA monomorphisation procedure to prioritise certain lemmas and if not have some kind of feedback on the lemmas whose translation failed or couldn't be done in time
+    - fix crash from monomorphisation of incompatible lemmas when the premise selectors "run on empty", or at least transition to a soft failure
 
 ## Xavier
 
+    - investigate tptp encoding 
     - investigate Isabelle invocations
         - Do a side by side of natural number game.
     - PR / issue for different (ie. Isabelle-like) options for zipperposition 
@@ -40,6 +42,10 @@
 
 
 # Issues
+
+## Missing lemmas
+
+   The hammer can fail case splitting on inductive definitions, this is because contrary to Isabelle, Lean doesn't have an inbuilt generation of iff lemmas for inductive definitions. Once we add it ourselves, the hammer has access to the necessary lemmas to solve more problems. There is the issue that generating these lemmas for all inductive definitions in the context takes too long (~3.5s, ~1.5s with some basic filtering). However this is necessary if we want the premise selector to have access to these definitions, the alternatives being to have either multiple runs of the premise selector or to violate the number of lemmas limit set by the user.
 
 ## TPTP Translation
 

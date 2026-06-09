@@ -13,26 +13,12 @@ set_option trace.hammer.premises true
 set_option trace.debug true
 set_option pp.rawOnError true
 
+set_option profiler true
+
 inductive A : Type
 
---@[mk_iff]
 inductive B : A -> Prop where
   | b x : B x
-
-#check B.b
-
---def test := do
---  let lctx ← Lean.MonadLCtx.getLCtx
---  lctx.forM fun elem: Lean.LocalDecl => do
---    let elemExpr := elem.toExpr
---    dbg_trace f!"local declaration: {elemExpr}"
-
-elab "list_local_decls" : tactic => do
-    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
-    ctx.forM fun decl: Lean.LocalDecl => do
-      let declExpr := decl.toExpr -- Find the expression of the declaration.
-      let declName := decl.userName -- Find the name of the declaration.
-      dbg_trace f!"+ local decl: name: {declName} | expr: {declExpr}"
 
 elab "list_constants" : tactic => do
     let env ← Lean.MonadEnv.getEnv
@@ -42,23 +28,28 @@ elab "list_constants" : tactic => do
       if cnstName.toString.contains "__" then
         dbg_trace "name: {cnstName}"
 
+-- TODO we want to apply this tactic after the premise selection to avoid generating useless lemmas
+-- but we also want to do it before so that the premise selector can chose them
+-- given how long the tactic takes to execute we may want to only apply it to selected definitions
 open Mathlib.Tactic.MkIff Lean Meta Elab
 elab "list_iff_ind" : tactic => do
   let env ← Lean.MonadEnv.getEnv -- get the local environment
   let constants := env.constants -- get the local constants.
   for cnst in constants do
     let (cnstName, cnstInfo) := cnst
-    match cnstInfo with
-      | .inductInfo inductVal =>
-        let indValTerm : Term ← PrettyPrinter.delab inductVal.type
-        let indValSyntax : Syntax := indValTerm.raw
-        try MetaM.run' do mkIffOfInductivePropImpl cnstName (cnstName.decapitalize.toString ++ "____iff").toName indValSyntax
-        catch _ => pure ()
-      | _ => pure ()
+      match cnstInfo with
+        | .inductInfo inductVal =>
+          if !cnstName.toString.contains "Lean." &&
+             !cnstName.toString.contains "Std." then
+            --dbg_trace "{cnstName}"
+            let indValTerm : Term ← PrettyPrinter.delab inductVal.type
+            let indValSyntax : Syntax := indValTerm.raw
+            try MetaM.run' do 
+              mkIffOfInductivePropImpl cnstName (cnstName.decapitalize.toString ++ "____iff").toName indValSyntax
+            catch _ => pure ()
+          else pure ()
+        | _ => pure ()
 
 example : forall x: A, B x := by
   list_iff_ind
-
-  select_premises "mymepo"
-  select_premises "mepo"
   hammer [] {}
