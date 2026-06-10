@@ -1,3 +1,10 @@
+# DONE
+   - TODO Xavier: what you did to mepo and co
+
+   - Bug in lean-auto: see issue #72
+   - Automatically generate the mk_iff inductive lemma as part of a preprocessing step
+
+
 # TODO
 
     - find title for paper
@@ -20,10 +27,14 @@
 
 ## Tanguy
 
-    - work out how to integrate mk_iff function in our version of the hammer
-    - finishing to fix and lint lean project
-    - investigate if it's possible to manipulate the LA monomorphisation procedure to prioritise certain lemmas and if not have some kind of feedback on the lemmas whose translation failed or couldn't be done in time
+   ### Active
+    - integrate mk_iff function in our version of the hammer
+    - openened issue #72 to fix a bug in lean-auto, monitoring
+
+   ### Passive
     - fix crash from monomorphisation of incompatible lemmas when the premise selectors "run on empty", or at least transition to a soft failure
+    - finishing linting lean project
+    - investigate if it's possible to manipulate the LA monomorphisation procedure to prioritise certain lemmas and if not have some kind of feedback on the lemmas whose translation failed or couldn't be done in time
 
 ## Xavier
 
@@ -66,4 +77,5 @@
 
 ## Minor
 
+    - The translation of leamma exists_true_left to tptp by lean auto is not well-formed (it has an application X0 @ X0 with a type which doesn't allow this)
     - with an empty or almost empty context, the premise selector will start suggesting nonsense lemmas. This is to be expected, however if the number of allowed premises isn't very low, there's a good chance that the premise selector will chose some random lemmas which, when taken together, cause the translation to fail for some of these lemmas.
