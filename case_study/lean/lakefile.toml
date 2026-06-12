@@ -15,7 +15,7 @@ name = "CaseStudy"
 [[require]]
 name = "Hammer"
 git = "https://github.com/JOSHCLUNE/LeanHammer"
-rev = "v4.29.0"
+rev = "v4.30.0"
 
 [[require]]
 name = "MyHammer"
