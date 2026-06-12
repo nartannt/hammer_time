@@ -2,7 +2,6 @@
    - TODO Xavier: what you did to mepo and co
 
    - Bug in lean-auto: see issue #72
-   - Automatically generate the mk_iff inductive lemma as part of a preprocessing step
 
 
 # TODO
@@ -30,14 +29,15 @@
    ### Active
     - integrate mk_iff function in our version of the hammer
     - openened issue #72 to fix a bug in lean-auto, monitoring
+    - finishing linting lean project
 
    ### Passive
     - fix crash from monomorphisation of incompatible lemmas when the premise selectors "run on empty", or at least transition to a soft failure
-    - finishing linting lean project
     - investigate if it's possible to manipulate the LA monomorphisation procedure to prioritise certain lemmas and if not have some kind of feedback on the lemmas whose translation failed or couldn't be done in time
 
 ## Xavier
 
+    - add our version of the hammer into the isabelle / lean comparison scripts
     - investigate tptp encoding 
     - investigate Isabelle invocations
         - Do a side by side of natural number game.

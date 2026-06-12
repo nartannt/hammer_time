@@ -18,6 +18,11 @@ git = "https://github.com/JOSHCLUNE/LeanHammer"
 rev = "v4.29.0"
 
 [[require]]
+name = "MyHammer"
+git = "https://github.com/nartannt/LeanHammer"
+rev = "main"
+
+[[require]]
 name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.30.0"
