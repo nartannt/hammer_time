@@ -1,6 +1,5 @@
 # DONE
    - TODO Xavier: what you did to mepo and co
-
    - Bug in lean-auto: see issue #72
 
 
@@ -21,13 +20,15 @@
         + time slicing
         + Zippperposition call (not using portfolio mode)
         + not using other provers (Vampire ...) (note that the Vampire support for HOL is not stable yet)
+        + issues with monomorphisation
 
 # Working on
 
 ## Tanguy
 
    ### Active
-    - integrate mk_iff function in our version of the hammer
+    - fix and integrate mk_iff function in our version of the hammer
+    - add isabelle and baseline lean comparison of why the mk_iff function is necessary 
     - openened issue #72 to fix a bug in lean-auto, monitoring
     - finishing linting lean project
 
