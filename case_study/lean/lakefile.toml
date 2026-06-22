@@ -21,8 +21,3 @@ rev = "main" # Replace this with `rev = "v4.XX.X"` to add LeanHammer for an earl
 name = "MyHammer"
 git = "https://github.com/nartannt/LeanHammer"
 rev = "main"
-
-[[require]]
-name = "mathlib"
-scope = "leanprover-community"
-rev = "v4.30.0"
