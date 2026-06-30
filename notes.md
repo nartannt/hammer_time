@@ -1,6 +1,7 @@
 # DONE
    - TODO Xavier: what you did to mepo and co
    - Bug in lean-auto: see issue #72
+   - Bug in Duper: see issue #83
 
 
 # TODO
@@ -29,10 +30,11 @@
    ### Active
     - fix and integrate mk_iff function in our version of the hammer
     - add isabelle and baseline lean comparison of why the mk_iff function is necessary 
-    - openened issue #72 to fix a bug in lean-auto, monitoring
+    - opened issue #72 to fix a bug in lean-auto, monitoring
     - finishing linting lean project
 
    ### Passive
+    - look into premise selection research
     - fix crash from monomorphisation of incompatible lemmas when the premise selectors "run on empty", or at least transition to a soft failure
     - investigate if it's possible to manipulate the LA monomorphisation procedure to prioritise certain lemmas and if not have some kind of feedback on the lemmas whose translation failed or couldn't be done in time
 
