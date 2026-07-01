@@ -22,7 +22,9 @@ It needs to be tuned and evaluated for Lean.
 -/
 
 
-namespace Lean.LibrarySuggestions.Mepo
+namespace HammerCases.PolarityMePo
+
+open Lean Meta Lean.LibrarySuggestions
 
 builtin_initialize registerTraceClass `mepo
 
@@ -111,7 +113,7 @@ partial def signedConstants (expr : Expr) : NameSet × NameSet :=
 
 --def getSignedConstants (candidate: Name) (ci: ConstantInfo) : (Name × NameSet) :=
 
-def polarise (score : NameSet → NameSet → Float) : 
+def polariseScore (score : NameSet → NameSet → Float) : 
     (NameSet × NameSet) → (NameSet × NameSet) → Float :=
   fun ( relevant candidate : (NameSet × NameSet)) ↦
     let (relevant_pos, relevant_neg)   := relevant
@@ -120,39 +122,63 @@ def polarise (score : NameSet → NameSet → Float) :
     let neg_score := score relevant_neg candidate_neg
     (pos_score + neg_score) / 2
 
-def mepo (initialRelevant : NameSet) (score : NameSet → NameSet → Float) 
+open Lean Meta MVarId in
+def getSignedConstants (g : MVarId) : MetaM (NameSet × NameSet) := withContext g do
+  let goalConsts := (← g.getType).getUsedConstantsAsSet
+  let mut hypConsts := NameSet.empty
+  for t in (← getLocalHyps) do
+    hypConsts := hypConsts ∪ (← inferType t).getUsedConstantsAsSet
+  return (goalConsts, hypConsts)
+
+def mepo (initialRelevant : NameSet × NameSet) (score : NameSet → NameSet → Float) 
     (accept : ConstantInfo → CoreM Bool) (maxSuggestions : Nat) (p : Float) (c : Float)
+    (polarise: Bool)
     : CoreM (Array Suggestion) := do
   let env ← getEnv
   let mut p := p
   let mut candidates := #[]
-  let mut relevant := initialRelevant
+  let mut (relevantPos, relevantNeg) := initialRelevant
   let mut accepted : Array Suggestion := {}
   for (n, ci) in env.constants do
     if ← accept ci then
-      candidates := candidates.push (n, ci.type.getUsedConstantsAsSet)
+      candidates := candidates.push (n, signedConstants ci.type)
+  if !polarise then
+    relevantPos := relevantPos ++ relevantNeg
+    relevantNeg := NameSet.empty
+    candidates := candidates.map 
+      (fun (n, (candPos, candNeg)) => (n, (candPos ++ candNeg, NameSet.empty)))
   while candidates.size > 0 && accepted.size < maxSuggestions do
     trace[mepo] m!"Considering candidates with threshold {p}."
-    trace[mepo] m!"Current relevant set: {relevant.toList}."
+    trace[mepo] m!"Current pos relevant set: {relevantPos.toList}."
+    trace[mepo] m!"Current neg relevant set: {relevantNeg.toList}."
     let (newAccepted, candidates') := candidates.map
-      (fun (n, c) => (n, c, score relevant c))
+      (fun (n, c) => (n, c, (polariseScore score) (relevantPos, relevantNeg) c))
       |>.partition fun (_, _, s) => p ≤ s
     if newAccepted.isEmpty then return accepted
     trace[mepo] m!"Accepted {newAccepted.map fun (n, _, s) => (n, s)}."
     accepted := newAccepted.foldl (fun acc (n, _, s) => acc.push { name := n, score := s }) accepted
     candidates := candidates'.map fun (n, c, _) => (n, c)
-    relevant := newAccepted.foldl (fun acc (_, ns, _) => acc ++ ns) relevant
+    (relevantPos, relevantNeg) := newAccepted.foldl (
+        fun (accPos, accNeg) (_, (nsPos, nsNeg), _) => 
+            (accPos ++ nsPos, accNeg ++ nsNeg)) (relevantPos, relevantNeg)
     p := p + (1 - p) / c
   return accepted.qsort (fun a b => a.score > b.score)
 
+
+open Lean Meta MVarId in
+def getRelevantSignedConstants (g : MVarId) : MetaM (NameSet × NameSet) := withContext g do
+  let goalConsts ← (← g.getType).relevantConstantsAsSet
+  let mut hypConsts := NameSet.empty
+  for t in (← getLocalHyps) do
+    hypConsts := hypConsts ∪ (← (← inferType t).relevantConstantsAsSet)
+  return (goalConsts, hypConsts)
 
 -- The values of p := 0.6 and c := 2.4 are taken from the MePo paper, and need to be tuned.
 public def mepoSelector (useRarity : Bool) (p : Float := 0.6) (c : Float := 2.4)
   (polarise : Bool := false) : Selector := 
   fun g config => do
-    if polarise then
       -- TODO
-      let constants ← g.getRelevantConstants
+      let constants ← getRelevantSignedConstants g
       let env ← getEnv
       let score ← if useRarity then do
         let frequency ← symbolFrequencyMap
@@ -160,24 +186,9 @@ public def mepoSelector (useRarity : Bool) (p : Float := 0.6) (c : Float := 2.4)
       else
         pure <| unweightedScore
       let accept := fun ci => return !isDeniedPremise env ci.name
-      let suggestions ← mepo constants score accept config.maxSuggestions p c
-      let suggestions := suggestions
-        |>.reverse  -- we favor constants that appear at the end of `env.constants`
-      return suggestions.take config.maxSuggestions
-    else 
-      let constants ← g.getRelevantConstants
-      let env ← getEnv
-      let score ← if useRarity then do
-        let frequency ← symbolFrequencyMap
-        pure <| frequencyScore (fun n => frequency.getD n 0)
-      else
-        pure <| unweightedScore
-      let accept := fun ci => return !isDeniedPremise env ci.name
-      let suggestions ← mepo constants score accept config.maxSuggestions p c
+      let suggestions ← mepo constants score accept config.maxSuggestions p c polarise
       let suggestions := suggestions
         |>.reverse  -- we favor constants that appear at the end of `env.constants`
       return suggestions.take config.maxSuggestions
 
-end Mepo
-end LibrarySuggestions
-end Lean
+end HammerCases.PolarityMePo
