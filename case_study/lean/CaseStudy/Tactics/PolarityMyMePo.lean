@@ -174,7 +174,7 @@ def getRelevantSignedConstants (g : MVarId) : MetaM (NameSet × NameSet) := with
   return (goalConsts, hypConsts)
 
 -- The values of p := 0.6 and c := 2.4 are taken from the MePo paper, and need to be tuned.
-public def mepoSelector (useRarity : Bool) (p : Float := 0.6) (c : Float := 2.4)
+public def polMepoSelector (useRarity : Bool) (p : Float := 0.6) (c : Float := 2.4)
   (polarise : Bool := false) : Selector := 
   fun g config => do
       -- TODO

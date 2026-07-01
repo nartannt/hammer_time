@@ -1,5 +1,6 @@
 import Lean.LibrarySuggestions
 import CaseStudy.Tactics.MyMePo
+import CaseStudy.Tactics.PolarityMyMePo
 
 section selectors
 
@@ -27,14 +28,15 @@ def combinedSelector (s1 s2 : Selector) : Selector := fun goal config => do
 
 /-- Look up a `Selector` by string name. -/
 def selectorByName : String → Option Selector
-  | "mepo"        => some (mepoSelector (useRarity := false))
-  | "mepo_rare"   => some (mepoSelector (useRarity := true) (p := 0.6) (c := 2.4))
-  | "mymepo"      => some (HammerCases.MyMePo.myMepoSelector (useRarity := false))
-  | "mymepo_rare" => some (HammerCases.MyMePo.myMepoSelector (useRarity := true))
-  | "sqn"         => some sineQuaNonSelector
-  | "random"      => some random
-  | "currentFile" => some currentFile
-  | "combined"    => some (combinedSelector
+  | "mepo"            => some (mepoSelector (useRarity := false))
+  | "mepo_rare"       => some (mepoSelector (useRarity := true) (p := 0.6) (c := 2.4))
+  | "mymepo"          => some (HammerCases.MyMePo.myMepoSelector (useRarity := false))
+  | "mymepo_rare"     => some (HammerCases.MyMePo.myMepoSelector (useRarity := true))
+  | "mepo_polarised"  => some (HammerCases.PolarityMePo.polMepoSelector (useRarity := false))
+  | "sqn"             => some sineQuaNonSelector
+  | "random"          => some random
+  | "currentFile"     => some currentFile
+  | "combined"        => some (combinedSelector
                             (mepoSelector (useRarity := false))
                             sineQuaNonSelector)
   | _             => none
