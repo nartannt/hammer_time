@@ -59,7 +59,7 @@ partial def signedConstants (expr : Expr) : NameSet × NameSet :=
       | Expr.forallE _ t b _ => 
         let (t_pos, t_neg) := exprFold t (!polarity)
         let (b_pos, b_neg) := exprFold b polarity
-        (b_pos ++ t_neg, b_neg ++ t_pos)
+        (b_pos ++ t_pos, b_neg ++ t_neg)
       | Expr.lam _ t b _     =>
         let (t_pos, t_neg) := exprFold t polarity
         let (b_pos, b_neg) := exprFold b polarity
@@ -72,6 +72,9 @@ partial def signedConstants (expr : Expr) : NameSet × NameSet :=
       | Expr.proj _ _ e      =>
         let e := exprFold e polarity
         e
+      | Expr.mdata _ d       =>
+        let d := exprFold d polarity
+        d
       | Expr.const n _       => 
         if polarity then
           (NameSet.insert NameSet.empty n, NameSet.empty)
@@ -81,37 +84,29 @@ partial def signedConstants (expr : Expr) : NameSet × NameSet :=
       --    - l is Not: polarity is flipped for args
       --    - l is a Prop, then, polarity for args is not defined in general
       --    - otherwise, propagate as expected
-      | Expr.app _ _         => 
-       match expr.getAppFnArgs with
-        -- not case
-        | (``Not, #[arg]) => 
-          let (arg_pos, arg_neg) := exprFold arg (!polarity)
+      | Expr.app l r         => 
+        if l.constName == ``Not then
+          let (r_pos, r_neg) := exprFold r (!polarity)
           if polarity then
-            (NameSet.insert arg_pos ``Not , arg_neg)
+            (NameSet.insert r_pos ``Not , r_neg)
           else
-            (arg_pos, NameSet.insert arg_neg ``Not)
-        | (name, args) =>
-          let (arg_pos, arg_neg) := 
-            -- Prop, polarity of arguments may be undefined
-            if expr.isProp then
-              let all_consts := args.foldl 
-                  (fun set arg ↦ (NameSet.ofArray arg.getUsedConstants) ++ set) NameSet.empty
-              (all_consts, all_consts)
-            else
-              args.foldl (fun acc arg ↦ 
-                let (arg_pos, arg_neg) := exprFold arg polarity
-                let (acc_pos, acc_neg) := acc
-                (arg_pos ++ acc_pos, arg_neg ++ acc_neg)) (NameSet.empty, NameSet.empty)
-          -- function constant still has a defined polarity
-          if polarity then
-            (NameSet.insert arg_pos name , arg_neg)
+            (r_pos, NameSet.insert r_neg ``Not)
+        else
+          if expr.isProp then
+            let rConsts := Expr.getUsedConstantsAsSet r
+            let (lPos, lNeg) := exprFold l polarity
+            (lPos ++ rConsts, lNeg ++ rConsts)
           else
-            (arg_pos, NameSet.insert arg_neg name)
+            let (lPos, lNeg) := exprFold l polarity
+            let (rPos, rNeg) := exprFold r polarity
+            (lPos ++ rPos, lNeg ++ rNeg)
       | _                    => (NameSet.empty, NameSet.empty)
       --termination_by sizeOf expr
-  exprFold expr true
-
---def getSignedConstants (candidate: Name) (ci: ConstantInfo) : (Name × NameSet) :=
+  let (pos, neg) := exprFold expr true
+  let size_diff := expr.getUsedConstantsAsSet.size - ((pos ++ neg).size)
+  if size_diff != 0  then dbg_trace "AAAAAA {size_diff}"; (pos, neg)
+  else 
+    (pos, neg)
 
 def polariseScore (score : NameSet → NameSet → Float) : 
     (NameSet × NameSet) → (NameSet × NameSet) → Float :=
@@ -120,15 +115,25 @@ def polariseScore (score : NameSet → NameSet → Float) :
     let (candidate_pos, candidate_neg) := candidate
     let pos_score := score relevant_pos candidate_pos
     let neg_score := score relevant_neg candidate_neg
-    (pos_score + neg_score) / 2
+    -- somewhat dubious in principle but makes sense in practice-type logic
+    if pos_score.isNaN then
+      if neg_score.isNaN then 0.0
+      else neg_score
+    else 
+      if neg_score.isNaN then pos_score
+      else (pos_score + neg_score) / 2
+    
 
 open Lean Meta MVarId in
-def getSignedConstants (g : MVarId) : MetaM (NameSet × NameSet) := withContext g do
-  let goalConsts := (← g.getType).getUsedConstantsAsSet
-  let mut hypConsts := NameSet.empty
+def getRelevantSignedConstants (g : MVarId) : MetaM (NameSet × NameSet) := withContext g do
+  let (goalConstsPos, goalConstsNeg) := signedConstants (← g.getType)
+  let mut hypConstsPos := NameSet.empty
+  let mut hypConstsNeg := NameSet.empty
   for t in (← getLocalHyps) do
-    hypConsts := hypConsts ∪ (← inferType t).getUsedConstantsAsSet
-  return (goalConsts, hypConsts)
+    let (newHypConstsPos, newHypConstsNeg) := signedConstants (← inferType t)
+    hypConstsPos := hypConstsPos ∪ newHypConstsPos
+    hypConstsNeg := hypConstsNeg ∪ newHypConstsNeg
+  return (goalConstsPos ++ hypConstsNeg, goalConstsNeg ++ hypConstsPos)
 
 def mepo (initialRelevant : NameSet × NameSet) (score : NameSet → NameSet → Float) 
     (accept : ConstantInfo → CoreM Bool) (maxSuggestions : Nat) (p : Float) (c : Float)
@@ -152,7 +157,8 @@ def mepo (initialRelevant : NameSet × NameSet) (score : NameSet → NameSet →
     trace[mepo] m!"Current pos relevant set: {relevantPos.toList}."
     trace[mepo] m!"Current neg relevant set: {relevantNeg.toList}."
     let (newAccepted, candidates') := candidates.map
-      (fun (n, c) => (n, c, (polariseScore score) (relevantPos, relevantNeg) c))
+      (fun (n, c) => 
+          (n, c, (polariseScore score) (relevantPos, relevantNeg) c))
       |>.partition fun (_, _, s) => p ≤ s
     if newAccepted.isEmpty then return accepted
     trace[mepo] m!"Accepted {newAccepted.map fun (n, _, s) => (n, s)}."
@@ -165,13 +171,13 @@ def mepo (initialRelevant : NameSet × NameSet) (score : NameSet → NameSet →
   return accepted.qsort (fun a b => a.score > b.score)
 
 
-open Lean Meta MVarId in
-def getRelevantSignedConstants (g : MVarId) : MetaM (NameSet × NameSet) := withContext g do
-  let goalConsts ← (← g.getType).relevantConstantsAsSet
-  let mut hypConsts := NameSet.empty
-  for t in (← getLocalHyps) do
-    hypConsts := hypConsts ∪ (← (← inferType t).relevantConstantsAsSet)
-  return (goalConsts, hypConsts)
+--open Lean Meta MVarId in
+--def getRelevantSignedConstants (g : MVarId) : MetaM (NameSet × NameSet) := withContext g do
+--  let goalConsts ← (← g.getType).relevantConstantsAsSet
+--  let mut hypConsts := NameSet.empty
+--  for t in (← getLocalHyps) do
+--    hypConsts := hypConsts ∪ (← (← inferType t).relevantConstantsAsSet)
+--  return (goalConsts, hypConsts)
 
 -- The values of p := 0.6 and c := 2.4 are taken from the MePo paper, and need to be tuned.
 public def polMepoSelector (useRarity : Bool) (p : Float := 0.6) (c : Float := 2.4)
@@ -186,7 +192,7 @@ public def polMepoSelector (useRarity : Bool) (p : Float := 0.6) (c : Float := 2
       else
         pure <| unweightedScore
       let accept := fun ci => return !isDeniedPremise env ci.name
-      let suggestions ← mepo constants score accept config.maxSuggestions p c polarise
+      let suggestions ← mepo constants score accept config.maxSuggestions p c true
       let suggestions := suggestions
         |>.reverse  -- we favor constants that appear at the end of `env.constants`
       return suggestions.take config.maxSuggestions
