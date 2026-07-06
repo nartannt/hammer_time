@@ -12,4 +12,5 @@ import CaseStudy.Semantics.Hammered.Big_Step_test
 import CaseStudy.Semantics.Hammered.Big_Step_test_iff
 import CaseStudy.Semantics.Hammered.Small_Step
 import CaseStudy.Tactics.MyMePo
+import CaseStudy.Tactics.PolarityMePo
 import CaseStudy.Tactics.Selectors

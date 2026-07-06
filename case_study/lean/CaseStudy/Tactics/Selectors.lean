@@ -1,6 +1,6 @@
 import Lean.LibrarySuggestions
 import CaseStudy.Tactics.MyMePo
-import CaseStudy.Tactics.PolarityMyMePo
+import CaseStudy.Tactics.PolarityMePo
 
 section selectors
 
