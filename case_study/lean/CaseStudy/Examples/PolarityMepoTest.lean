@@ -18,29 +18,30 @@ set_option trace.mepo true
 
 inductive P : Prop
 inductive Q : Prop
---public theorem p : P := by sorry
---public theorem p_imp_q : P → Q := by sorry
 
--- the premises h and h' are irrelevant to the goal
+-- the Q and P recursors / constructors are irrelevant to the goal
 set_library_suggestions (selectorByName "mepo_polarised").get!
 example : Q := by
   have h : P := by sorry
   have h': Q → P := by sorry
+  -- polarised mepo selects none of them
   hammer []
 
-set_library_suggestions mepoSelector (useRarity := false)
+set_library_suggestions (selectorByName "mepo").get!
 example : Q := by
   have h : P := by sorry
   have h': Q → P := by sorry
+  -- baseline mepo selects irrelevant premises
   hammer []
 
 
 
--- the premises h and h' are necessary to prove the goal
+-- the Q and P recursors / constructors are necessary to prove the goal
 set_library_suggestions (selectorByName "mepo_polarised").get!
 example : Q := by
   have h : P := by sorry
   have h': P → Q := by sorry
+  -- when they are useful, polarised mepo selects the same premises as mepo
   hammer []
 
 set_library_suggestions (selectorByName "mepo").get!
