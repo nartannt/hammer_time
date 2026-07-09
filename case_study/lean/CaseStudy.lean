@@ -1,6 +1,7 @@
 import CaseStudy.Algorithms.HomeworkFiL
 import CaseStudy.Algorithms.HomeworkFiLDefs
-import CaseStudy.HammerCases.MissingIndDef
+import CaseStudy.Examples.MissingIndDef.MissingIndDefFail
+import CaseStudy.Examples.MissingIndDef.MissingIndDefSucc
 import CaseStudy.HammerCases.AddZeroSucc
 import CaseStudy.Nat.Basic
 import CaseStudy.Semantics.Base.Big_Step

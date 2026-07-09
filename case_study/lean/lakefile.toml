@@ -13,6 +13,16 @@ maxSynthPendingDepth = 3
 name = "CaseStudy"
 
 [[require]]
+name = "Auto"
+git = "https://github.com/leanprover-community/lean-auto.git"
+rev = "v4.30.0-hammer"
+
+[[require]]
+name = "Duper"
+git = "https://github.com/leanprover-community/duper.git"
+rev = "main"
+
+[[require]]
 name = "Hammer"
 git = "https://github.com/JOSHCLUNE/LeanHammer"
 rev = "main" # Replace this with `rev = "v4.XX.X"` to add LeanHammer for an earlier supported Lean version.
