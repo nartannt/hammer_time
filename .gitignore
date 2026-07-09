@@ -9,3 +9,4 @@ tmp/
 tptp_files
 __pycache__
 *.exe
+**/mathlib
