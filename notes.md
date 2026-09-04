@@ -13,13 +13,16 @@
         + Sharpening LeanHammer
         + Optimising LeanHammer
 
-    - possible reasons for slowness / failure
-        + missing lemmas / premise selector                 -> being addressed by Xavier and Tanguy 
-        + reconstruction                                    -> doesn't seem to be a significant issue
+    - Things to investigate
+        + improving premise selector in general             -> Xavier and Tanguy on it
+        + issues with monomorphisation                      -> Tanguy on it
+
+        + interaction between PS and typeclasses            -> TODO
         + time slicing                                      -> TODO
         + Zippperposition call (not using portfolio mode)   -> TODO
+
+        + reconstruction                                    -> doesn't seem to be a significant issue
         + not using other provers (Vampire ...)             -> other ppl working on this
-        + issues with monomorphisation                      -> TODO
 
     - Evaluation
         + compare: MyMePo, MePo, PolarisedMepo
@@ -30,16 +33,18 @@
 ## Tanguy
 
    ### Active
-    - add isabelle and baseline lean comparison of why the mk_iff function is necessary 
-    - opened issue #72 to fix a bug in lean-auto, monitoring
-    - finishing linting lean project
+    - opened issue #72 to fix a bug in lean-auto, monitoring, fixed in fork
+    - create infrastructure for premise selector evaluation
+    - investigate adding "Iterative Monomorphisation" bounds to LA monomorphisation
+        + translates to TH0, update translation to TH1?
+        + mess around with options, some of the defaults seem to have high levels of transparency for equality
 
    ### Passive
     - look into premise selection research, notably SiNe
+    - finishing linting lean project
     - profile hammer to figure out why it is so slow
     - make a version of PolarisedMePo which takes into account Xavier's changes
     - fix crash from monomorphisation of incompatible lemmas when the premise selectors "run on empty", or at least transition to a soft failure
-    - investigate if it's possible to manipulate the LA monomorphisation procedure to prioritise certain lemmas and if not have some kind of feedback on the lemmas whose translation failed or couldn't be done in time
 
 ## Xavier
 

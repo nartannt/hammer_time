@@ -1,0 +1,57 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage{amsmath}
+
+\begin{document}
+Title (wip): Oiling up LeanHammer
+
+Plan: 18 pages budget
+\begin{enumerate}
+   \item title + abstract -- 1
+   \item intro -- 1-2
+   \item premise selection -- 5-6
+   \begin{enumerate}
+      \item polarity
+      \item matching on typeclasses
+      \item definition unfolding
+      \item shuffling
+   \end{enumerate}
+   \item translation -- 3-4
+   \begin{enumerate}
+      \item lean-auto interface? 
+      \item inductive theorems
+      \item unfolding definitions?
+      \item evaluation
+   \end{enumerate}
+   \item external provers -- 4-5
+   \begin{enumerate}
+      \item zipperposition configuration
+      \item aesop?
+      \item time?
+   \end{enumerate}
+   \item conclusion + future work -- 1
+\end{enumerate}
+
+\section{Premise Selection}
+
+The current LeanHammer premise selector is a machine learning based. A typical invocation of the hammer will select premises through a call to an external server [TODO check, i'm not entirely sure where the server is]. This approach allows for a strong premise selector at the cost of significant latency. Our approach instead makes use of a variant of the MePo algorithm to obtain similar performance without the disadvantage of the latency incurred by the server call or the compute cost of the machine learned selection algorithm[TODO is it actually that bad to run once it's been learned?].
+
+MePo is a very lightweight premise selection procedure, it is a score based system. A hypothesis will be given a score of \(\frac{g}{c}\) where \(c\) is the number of constants in the hypothesis and \(g\) the number of constants which appear in both the hypothesis and the goal. The current version of MePo also implements a more sophisticated version of this procedure which weights the score of a given constant by how rarely this constant occurs in the goal. [TODO forgot to talk about the transitivity thing]
+
+This approach performs remarkably well considering its simplicity (and more to the point: its economy). However, it does not perform well-enough to compete with the LeanHammer selection procedure. We therefore implemented several additional heuristic refinements, in the same vein as the rarity weighting. One major constraint on any change to MePo is efficiency, our goal is to save time with regards to the existing default. 
+
+We made four main changes to MePo, presented in the following sub-sections.
+
+\subsection{Polarity}
+
+Consider the problem \(P \Rightarrow Q \), the hypotheses \(P, \lnot P, Q\) and \(\lnot Q\) would be given the same weight by standard MePo. It is clear that only hypotheses \(P\) and \(\lnot Q\) are useful to show this goal. Indeed, a symbol that appears positively in a hypothesis will only be useful in a proof if appears negatively in the goal because it otherwise gives no additional information. This feature consists in a simple change, each constant of the goal carries the information of the polarity at which it occurs in the goal, a matching constant in a candidate hypothesis will only be counted in the score if it occurs with the opposite polariy.
+
+Computing the polarity of a constant in a higher-order formula is undecidable because propositional symbols can be quantified over and constrained with arbitrary higher-order formulas. Furthermore, some propositional symbols erase polarity, this is trivially the case for \(\lambda x : \text{Prop}. \;\bot\). This can easily be overcome by adding the possibility of constants to be of undetermined polarity and allowing a match to be counted if either constant involved is of unknown polarity.
+
+Once this subtelty is accounted for, we are left with a change that can eliminate obviously spurious constant matches which occur above non-polar propositional symbols. Most theorems and lemmas are more likely to make use of the standard porpositional connectives over newly defined ones, giving grounds to believe this heuristic should be reasonably effective. In fact, given the very low computational overhead of this feature, it would take very little additonal performance to justify its inclusion. Evaluation results show [TODO Xavier, i don't want to say wrong things].
+
+\section{Translation}
+
+\section{External Provers}
+
+\end{document}
