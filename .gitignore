@@ -10,4 +10,5 @@ tptp_files
 __pycache__
 *.exe
 **/mathlib
-**/*.pdf
+*.pdf
+*.gz

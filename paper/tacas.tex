@@ -2,35 +2,32 @@
 
 \usepackage{amsmath}
 
-\begin{document}
-Title (wip): Oiling up LeanHammer
+\author{Xavier G\'{e}n\'{e}reux, Tanguy Bozec and Jasmin Blanchette?}
+\title{Oiling up LeanHammer (wip title)}
+\institute{Ludwig-Maximilian-Universit\"{a}t, M\"{u}nchen, Bayern}
 
-Plan: 18 pages budget
+
+\begin{document}
+\maketitle
+\abstract{We present changes to the premise selection, translation and external prover invocation components of LeanHammer. These modifications are evaluated and shown to be benificial to the tool's solve rate on the Mathlib library.}
+
+
+\section{Introduction}
+Lists of some of the more popular generalist proof assistants are often accompanied by a short summary of their most salient strength or feature. Lean is rarely talked of without mention of Mathlib, Rocq often discussed in relation to its theoretical foundations. When it comes to Isabelle/HOL, its powerful automation, in the form of Sledgehammer, is often touted as one of its core strengths. The LeanHammer project is a tool which implements a similar approach in the Lean proof assistant. In order to acheive this, it relies on the following components:
 \begin{enumerate}
-   \item title + abstract -- 1
-   \item intro -- 1-2
-   \item premise selection -- 5-6
-   \begin{enumerate}
-      \item polarity
-      \item matching on typeclasses
-      \item definition unfolding
-      \item shuffling
-   \end{enumerate}
-   \item translation -- 3-4
-   \begin{enumerate}
-      \item lean-auto interface? 
-      \item inductive theorems
-      \item unfolding definitions?
-      \item evaluation
-   \end{enumerate}
-   \item external provers -- 4-5
-   \begin{enumerate}
-      \item zipperposition configuration
-      \item aesop?
-      \item time?
-   \end{enumerate}
-   \item conclusion + future work -- 1
+   \item Its own premise selector to identify the lemmas and definitions which are likely to be necessary to prove a given theorem or lemma.
+   \item lean-auto: a translation procedure fron Lean's logic into monomorphic higher-ordrer logic.
+   \item External theorem provers (namely Zipperposition and SMT solvers).
+   \item Duper: an automatic theorem prover written in Lean that serves to reconstruct a proof of the goal from the output of the external theorem provers.
 \end{enumerate}
+
+Although the architecture of LeanHammer closely resembles that of Sledgehammer, it is necessary to note that Lean is a far more hostile environment to this kind of automation. 
+Firstly, Lean's logic is an extension of dependent type theory as opposed to Isabelle's extension of higher-order logic. An immediate consequence of this is that the translation work of lean-auto needs to be significantly more involved to reach the logic supported by Zipperposition.
+Secondly, Lean's handling of equality implies that deciding the definitional equality a pair of terms can be computationally intensive. As a consequence, it is often impractical to establish all true equalities between the terms of a given problem [TODO am i speaking out of line here?].
+Thirdly, Lean's typeclass system relies on an often expensive inference system. This affects premise selection, which cannot inspect all possibly relevant lemmas without paying the full cost of the full typeclass resolution algorithm.
+Finally, the sheer size of Mathlib, has dire implications for premise selection because it acts as a massive multiplier on costs, whether they come in the form of caching or time.
+
+These challenges likely explain why LeanHammer hasn't had the same success in the Lean community as Sledgehammer among Isabelle users. However, we also believe there is room for improvements. In this paper, we present a novel extension of a light-weight premise selection algorithm and changes to lean-auto's TPTP encoding and Zipperposition invocation. We evaluate these changes and show that their cumulative effect allows for a modest improvement in the hammer's overall performance and responsiveness.
 
 \section{Premise Selection}
 
